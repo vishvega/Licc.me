@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Licc.me</title>
+    <meta property="og:title" content="Licc.me">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://licc.me">
+    <meta property="og:image" content="https://licc.me/assets/icon.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:height" content="256">
+    <meta property="og:image:width" content="256">
+    <meta property="og:description" content="Licc me if you can ;)">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        @font-face {
+            font-family: Whitney;
+            font-weight: 200;
+            src: url("/assets/whitney-book.woff") format("woff");
+        }
+
+        @font-face {
+            font-family: Whitney;
+            font-weight: normal;
+            src: url("/assets/whitney-medium.woff") format("woff");
+        }
+
+        @font-face {
+            font-family: Whitney;
+            font-weight: bold;
+            src: url("/assets/whitney-bold.woff") format("woff");
+        }
+
+        * {
+            font-family: Whitney, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: normal;
+            color: #21252B;
+            background-color: #FFF;
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+            transition: all 0.2s ease;
+        }
+
+        hr {
+            border: none;
+            height: 24px;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            background-color: #F5F7FB;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        body>* {
+            flex-grow: 0;
+            flex-shrink: 0;
+            flex-basis: auto;
+        }
+
+        #welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: default;
+            height: 120px;
+            width: 200px;
+            background-color: transparent;
+            margin: 20px 0;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #welcome>* {
+            flex-grow: 0;
+            flex-shrink: 0;
+            flex-basis: auto;
+        }
+
+        #welcome>div {
+            height: 70px;
+            width: 70px;
+            background-size: cover;
+            background-position: center;
+            background-image: url("/assets/icon.jpg");
+            border-radius: 50%;
+            margin: 10px 0;
+        }
+
+        #welcome>p {
+            text-align: center;
+            font-size: 25px;
+            font-weight: 200;
+            background-color: transparent;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 400px;
+            background-color: #FFF;
+            border: 1px solid #DDD;
+            border-radius: 5px;
+            margin-bottom: 200px;
+            animation: pop 0.5s ease-in-out;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        form>div:first-of-type {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 80%;
+            margin: 20px 0;
+        }
+
+        form input {
+            outline: none;
+            height: 30px;
+            width: 100%;
+            border: 1px solid #DDD;
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+
+        form input:focus {
+            box-shadow: 0 0 10px #D9E8FF;
+            border: 1px solid #3C63FF;
+        }
+
+        form button {
+            cursor: pointer;
+            outline: none;
+            height: 30px;
+            width: 100%;
+            font-weight: bold;
+            color: #FFF;
+            background-color: #3C63FF;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        form button:hover {
+            background-color: #6D8AFF;
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        form button:active {
+            background-color: #3557DF;
+        }
+
+        form button:disabled,
+        form button[disabled] {
+            cursor: not-allowed;
+        }
+
+        form p>a {
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            color: #3C63FF;
+        }
+
+        form p>a:hover {
+            text-decoration: underline;
+        }
+
+        #signup>div:first-of-type>div:first-of-type {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+        }
+
+        #signup>div:first-of-type>div:first-of-type>* {
+            flex-grow: 1;
+            flex-shrink: 0;
+            flex-basis: auto;
+        }
+
+        #signup>div:first-of-type>div:first-of-type>input:first-of-type {
+            width: calc(100% - 60px);
+        }
+
+        #signup>div:first-of-type>div:first-of-type>input:nth-of-type(2) {
+            width: 60px;
+        }
+
+        #note {
+            width: calc(100% - 40px);
+            background-color: #00CC99;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        #note p {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFF;
+            background-color: transparent;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0);
+            }
+            75% {
+                transform: scale(1.125);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script>
+        (() => {
+            document.addEventListener("DOMContentLoaded", () => {
+                const message = document.getElementById("message");
+                const login = document.getElementById("login");
+                const signup = document.getElementById("signup");
+                document.addEventListener("click", function (e) {
+                    const element = e.target;
+                    if (element.classList.contains("change")) {
+                        e.preventDefault();
+                        if (signup.style.display === "none") {
+                            login.style.display = "none";
+                            signup.style.display = "flex";
+                            message.textContent = "Sign Up";
+                        } else {
+                            signup.style.display = "none";
+                            login.style.display = "flex";
+                            message.textContent = "Log In";
+                        }
+                    }
+                });
+                document.getElementById("login").addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const submit = this.getElementsByTagName("button")[0];
+                    const input = this.getElementsByTagName("input");
+                    const email = input[0].value;
+                    const password = input[1].value;
+                    if (email.length <= 64 && /^[a-zA-Z0-9.-_]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                        if (password.length >= 8) {
+                            submit.disabled = true;
+                            const xhr = new XMLHttpRequest();
+                            xhr.open("POST", "/auth/login", true);
+                            xhr.setRequestHeader("Content-type", "application/json");
+                            xhr.onreadystatechange = () => {
+                                if (xhr.readyState === XMLHttpRequest.DONE) {
+                                    if (xhr.status === 200) {
+                                        const response = JSON.parse(xhr.responseText);
+                                        if (response.status === true) {
+                                            window.location = "/";
+                                        } else {
+                                            submit.disabled = false;
+                                            swal({
+                                                title: "Oops",
+                                                text: response.error,
+                                                icon: "error"
+                                            });
+                                        }
+                                    } else {
+                                        submit.disabled = false;
+                                        swal({
+                                            title: "Oops",
+                                            text: "Network error",
+                                            icon: "error"
+                                        });
+                                    }
+                                }
+                            };
+                            xhr.send(JSON.stringify({
+                                email: email,
+                                password: password
+                            }));
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: "Wrong password",
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Invalid email",
+                            icon: "error"
+                        });
+                    }
+                });
+                document.getElementById("signup").addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const submit = this.getElementsByTagName("button")[0];
+                    const input = this.getElementsByTagName("input");
+                    const username = input[0].value;
+                    const tag = input[1].value;
+                    const email = input[2].value;
+                    const password = input[3].value;
+                    const verify = input[4].value;
+                    if (username.length > 0 && username.length <= 64) {
+                        if (!username.includes("#")) {
+                            if (/^[0-9]{4}$/.test(tag)) {
+                                if (email.length <= 64 && /^[a-zA-Z0-9.-_]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                                    if (password.length >= 8) {
+                                        if (password === verify) {
+                                            submit.disabled = true;
+                                            const xhr = new XMLHttpRequest();
+                                            xhr.open("POST", "/auth/signup", true);
+                                            xhr.setRequestHeader("Content-type", "application/json");
+                                            xhr.onreadystatechange = () => {
+                                                if (xhr.readyState === XMLHttpRequest.DONE) {
+                                                    if (xhr.status === 200) {
+                                                        const response = JSON.parse(xhr.responseText);
+                                                        if (response.status === true) {
+                                                            window.location = "/";
+                                                        } else {
+                                                            submit.disabled = false;
+                                                            swal({
+                                                                title: "Oops",
+                                                                text: response.error,
+                                                                icon: "error"
+                                                            });
+                                                        }
+                                                    } else {
+                                                        submit.disabled = false;
+                                                        swal({
+                                                            title: "Oops",
+                                                            text: "Network error",
+                                                            icon: "error"
+                                                        });
+                                                    }
+                                                }
+                                            };
+                                            xhr.send(JSON.stringify({
+                                                username: username,
+                                                tag: tag,
+                                                email: email,
+                                                password: password,
+                                                verify: verify
+                                            }));
+                                        } else {
+                                            swal({
+                                                title: "Oops",
+                                                text: "Passwords don't match",
+                                                icon: "error"
+                                            });
+                                        }
+                                    } else {
+                                        swal({
+                                            title: "Oops",
+                                            text: "Password must have at least 8 characters",
+                                            icon: "error"
+                                        });
+                                    }
+                                } else {
+                                    swal({
+                                        title: "Oops",
+                                        text: "Invalid email",
+                                        icon: "error"
+                                    });
+                                }
+                            } else {
+                                swal({
+                                    title: "Oops",
+                                    text: "Invalid tag",
+                                    icon: "error"
+                                });
+                            }
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: "Username contains invalid characters",
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Username must be between 1 - 64 characters",
+                            icon: "error"
+                        });
+                    }
+                });
+            });
+        })();
+    </script>
+</head>
+<body onbeforeunload="">
+    <div id="welcome">
+        <div></div>
+        <p>Log In</p>
+    </div>
+    <form id="login" autocomplete="">
+        <div>
+            <input type="text" maxlength="64" placeholder="Email">
+            <hr>
+            <input type="password" placeholder="Password">
+            <hr>
+            <button type="submit">Log In</button>
+        </div>
+        <p>Don't have an account?&nbsp;
+            <a class="change">Sign up here</a>
+        </p>
+        <div id="note">
+            <p>Stable Version</p>
+        </div>
+    </form>
+    <form id="signup" style="display: none" autocomplete="">
+        <div>
+            <div>
+                <input type="text" maxlength="64" placeholder="Username">
+                <input type="text" maxlength="4" placeholder="0000" value="0000">
+            </div>
+            <hr>
+            <input type="text" maxlength="64" placeholder="Email">
+            <hr>
+            <input type="password" placeholder="Password">
+            <hr>
+            <input type="password" placeholder="Verify Password">
+            <hr>
+            <button type="submit">Sign Up</button>
+        </div>
+        <p>Already have an account?&nbsp;
+            <a class="change">Log in</a>
+        </p>
+        <hr>
+    </form>
+</body>
+</html>

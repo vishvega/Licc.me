@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Licc.me</title>
+    <link rel="stylesheet" type="text/css" href="/css/index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.0/sweetalert.min.js"></script>
+    <script>
+    (() => {
+        document.addEventListener("DOMContentLoaded", () => {
+            Element.prototype.classSwitch = function(a, b) {
+                this.classList.remove(a);
+                this.classList.add(b);
+            };
+            Element.prototype.show = function() {
+                this.style.display = "flex";
+            };
+            Element.prototype.hide = function() {
+                this.style.display = "none";
+            };
+            Element.prototype.scrollUp = function() {
+                this.scrollTop = 0;
+            };
+            Element.prototype.scrollDown = function() {
+                this.scrollTop = this.scrollHeight - this.clientHeight;
+            };
+            String.prototype.escape = function() {
+                return this.replace(/[&<>]/g, function(match) {
+                    return escape[match] || match;
+                });
+            };
+            String.prototype.parseEmojis = function() {
+                return this.replace(/:([^:]+):/g, function(match, p1) {
+                    return client.emojis.has(p1) ? `<!${client.emojis.get(p1).id}>` : `:${p1}:`;
+                });
+            };
+            String.prototype.resolveEmojis = function() {
+                return this.replace(/&lt;!([a-z0-9]{16})&gt;/g, function(match, p1) {
+                    return `<img class="emoji" src="/emojis/${p1}.png">`;
+                });
+            };
+            String.prototype.resolveMentions = function() {
+                return this.replace(/(@.{1,64}#[0-9]{4})|(@[everyone|here])/g, function(match) {
+                    return `<span class="mention">${match}</span>`;
+                });
+            };
+            Map.prototype.first = function() {
+                return this.values().next().value;
+            };
+            let ws, date, count = 0, hello = false, changing = true, hasLoadedWS = false, isTyping = false, loadingUp = false, scrolledUp = false, windowIsActive = true;
+            const EVERYONE = "0", DM = "dm", DM_CHANNEL = 0, TEXT_CHANNEL = 1;
+            const keys = ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock", "ScrollLock", "Shift", "Super", "Symbol", "SymbolLock", "Enter", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "End", "Home", "PageDown", "PageUp", "Copy", "CrSel", "ExSel", "Insert", "Accept", "Again", "Attn", "Cancel", "ContextMenu", "Escape", "Execute", "Find", "Finish", "Help", "Pause", "Play", "Props", "Select", "ZoomIn", "ZoomOut", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "Soft1", "Soft2", "Soft3", "Soft4", "BrightnessDown", "BrightnessUp", "Eject", "LogOff", "Power", "PowerOff", "PrintScreen", "Hibernate", "Standby", "WakeUp", "AllCandidates", "Alphanumeric", "CodeInput", "Compose", "Convert", "Dead", "FinalMode", "GroupFirst", "GroupLast", "GroupNext", "GroupPrevious", "ModeChange", "NextCandidate", "NonConvert", "PreviousCandidate", "Process", "SingleCandidate", "HangulMode", "HanjaMode", "JunjaMode", "Eisu", "Hankaku", "Hiragana", "HiraganaKatakana", "KanaMode", "KanjiMode", "Katakana", "Romaji", "Zenkaku", "ZenkakuHanaku", "AppSwitch", "Call", "Camera", "CameraFocus", "EndCall", "GoBack", "GoHome", "HeadsetHook", "LastNumberRedial", "Notification", "MannerMode", "VoiceDial", "ChannelDown", "ChannelUp", "MediaFastForward", "MediaPause", "MediaPlay", "MediaPlayPause", "MediaRecord", "MediaRewind", "MediaStop", "MediaTrackNext", "MediaTrackPrevious", "AudioBalanceLeft", "AudioBalanceRight", "AudioBassDown", "AudioBassBoostDown", "AudioBassBoostToggle", "AudioBassBoostUp", "AudioBassUp", "AudioFaderFront", "AudioFaderRear", "AudioSurroundModeNext", "AudioTrebleDown", "AudioTrebleUp", "AudioVolumeDown", "AudioVolumeMute", "AudioVolumeUp", "MicrophoneToggle", "MicrophoneVolumeDown", "MicrophoneVolumeMute", "MicrophoneVolumeUp"];
+            const hasSVG = ["3g2", "3ga", "3gp", "7z", "aa", "aac", "accdb", "accdt", "adn", "ai", "aif", "aifc", "aiff", "ait", "amr", "ani", "apk", "app", "asax", "asc", "ascx", "asf", "ash", "ashx", "asmx", "asp", "aspx", "asx", "au", "aup", "avi", "axd", "aze", "bak", "bash", "bat", "bin", "blank", "bmp", "bpg", "browser", "bz2", "c", "cab", "caf", "cal", "catalog", "cd", "cer", "cfg", "cfm", "cfml", "class", "cmd", "com", "compile", "config", "cpp", "cptx", "cr2", "crdownload", "crt", "crypt", "cs", "csh", "csproj", "css", "csv", "cue", "dat", "db", "dbf", "deb", "dgn", "dist", "diz", "dll", "dmg", "dng", "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "download", "dpj", "ds_store", "dtd", "dwg", "dxf", "enc", "eot", "eps", "epub", "exe", "f4v", "fax", "fb2", "fla", "flac", "flv", "folder", "gadget", "gem", "gif", "gitignore", "go", "gpg", "gz", "h", "handlebars", "hbs", "hs", "hsl", "htm", "html", "ibooks", "ico", "ics", "idx", "iff", "ifo", "image", "img", "indd", "inf", "ini", "iso", "j2", "jar", "java", "jpe", "jpeg", "jpg", "js", "json", "jsp", "jsx", "key", "kf8", "ksh", "less", "licx", "lisp", "lit", "lock", "log", "lua", "m", "m2v", "m3u", "m3u8", "m4a", "m4r", "m4v", "map", "master", "mc", "md", "mdb", "mdf", "mi", "mid", "midi", "mkv", "mm", "mo", "mobi", "mov", "mp2", "mp3", "mp4", "mpa", "mpd", "mpe", "mpeg", "mpg", "mpga", "mpp", "mpt", "msi", "msu", "nef", "nes", "nfo", "nix", "odb", "ods", "odt", "ogg", "ogv", "ost", "otf", "ott", "ovf", "p12", "p7b", "pages", "part", "pcd", "pdb", "pdf", "pem", "pfx", "pgp", "ph", "phar", "php", "pkg", "pl", "pm", "png", "po", "pom", "pot", "potx", "pps", "ppsx", "ppt", "pptm", "pptx", "prop", "ps", "ps1", "psd", "psp", "pst", "pub", "py", "pyc", "qt", "ra", "ram", "rar", "raw", "rb", "rdf", "resx", "retry", "rm", "rpm", "rsa", "rtf", "ru", "rub", "sass", "scss", "sdf", "sh", "sitemap", "skin", "sldm", "sldx", "sln", "sol", "sql", "step", "stl", "svg", "swd", "swf", "swift", "sys", "tar", "tcsh", "tex", "tfignore", "tga", "tgz", "tif", "tiff", "torrent", "ts", "tsv", "ttf", "twig", "txt", "udf", "vb", "vbproj", "vcd", "vcs", "vdi", "vdx", "vmdk", "vob", "vscodeignore", "vsd", "vss", "vst", "vsx", "vtx", "war", "wav", "wbk", "webinfo", "webm", "webp", "wma", "wmf", "wmv", "woff", "woff2", "wsf", "xaml", "xcf", "xlm", "xls", "xlsm", "xlsx", "xlt", "xltm", "xltx", "xml", "xpi", "xps", "xrb", "xsd", "xsl", "xspf", "xz", "yaml", "yml", "z", "zip", "zsh"];
+            const images = ["jpg", "jpeg", "png", "gif", "ico", "svg"];
+            const uploadableImages = {
+                "jpg": "image/jpeg",
+                "jpeg": "image/jpeg",
+                "png": "image/png",
+                "gif": "image/gif",
+            };
+            const audio = {
+                "flac": "audio/flac",
+                "mp3": "audio/mpeg",
+                "ogg": "audio/ogg",
+                "wav": "audio/wav",
+            };
+            const video = {
+                "mp4": "video/mp4",
+                "mov": "video/quicktime",
+                "webm": "video/webm",
+            };
+            const escape = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;"
+            };
+            const cache = {
+                attachment: null,
+                icon: null
+            };
+            const show = {
+                menu: false,
+                emojis: false,
+                upload: false,
+                splash: false,
+                edit: false,
+                main: false,
+                overlay: false,
+                stats: false                
+            };
+            const loading = document.getElementById("loading");
+            loading.show();
+            const stylesheet = document.getElementsByTagName("link")[0];
+            const ping = document.getElementById("ping");
+            const click = document.getElementsByTagName("nav")[0].getElementsByClassName("avatar")[0];
+            const dm = document.getElementById("dm");
+            const channels = document.getElementById("channels");
+            const info = document.getElementById("info");
+            const main = document.getElementById("main");
+            const overlay = document.getElementById("overlay");
+            const guilds = document.getElementById("guilds");
+            const friendsButton = dm.getElementsByTagName("button")[0];
+            const pendingButton = dm.getElementsByTagName("button")[1];
+            const friendsDot = dm.getElementsByClassName("dot")[0];
+            const pendingDot = dm.getElementsByClassName("dot")[1];
+            const friends = document.getElementById("friends");
+            const pending = document.getElementById("pending");
+            const search = document.getElementById("search");
+            const chat = document.getElementById("chat");
+            const messages = document.getElementById("messages");
+            const textarea = document.getElementsByTagName("textarea")[0];
+            const uploadTextarea = document.getElementsByTagName("textarea")[1];
+            const emojis = document.getElementById("emojis").getElementsByTagName("div")[1];
+            const uploadButton = document.getElementById("upload-button");
+            const upload = document.getElementById("upload");
+            const view = document.getElementById("view");
+            const whoistyping = document.getElementById("who-is-typing");
+            const splash = document.getElementById("splash");
+            const edit = document.getElementById("edit");
+            const manage = document.getElementById("manage");
+            const manageEmojis = document.getElementById("manage-emojis").getElementsByTagName("div")[1];
+            const manageInvites = document.getElementById("manage-invites").getElementsByTagName("div")[1];
+            const settings = document.getElementById("settings");
+            if (window.localStorage.getItem("light")) {
+                stylesheet.setAttribute("href", "/css/light.css");
+            }
+            window.addEventListener("focus", () => {
+                windowIsActive = true;
+                if (client.thisChannelType === DM_CHANNEL && client.thisDMChannelId !== EVERYONE) {
+                    const channel = client.dmChannels.get(client.thisDMChannelId);
+                    if (channel.unread) {
+                        channel.unread = false;
+                        ws.send(JSON.stringify({
+                            type: "ACKNOWLEDGEMENT",
+                            channel_id: client.thisDMChannelId
+                        }));
+                    }
+                }
+            });
+            window.addEventListener("blur", () => {
+                windowIsActive = false;
+            });
+            window.addEventListener("error", () => {
+                console.clear();
+            }, true);
+            function asyncFileReader(file) {
+                return new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.addEventListener("load", () => {
+                        resolve(reader.result);
+                    });
+                    reader.readAsDataURL(file);
+                });
+            }
+            function changeFocus(a, b) {
+                a.classSwitch("focusout", "focus");
+                b.classSwitch("focus", "focusout");
+            }
+            function disableAttachments(disable = true) {
+                if (disable) {
+                    document.getElementById("chat").getElementsByTagName("label")[0].classList.add("disabled");
+                    document.getElementById("file").disabled = true;
+                } else {
+                    document.getElementById("chat").getElementsByTagName("label")[0].classList.remove("disabled");
+                    document.getElementById("file").disabled = false;
+                }
+            }
+            function sound() {
+                const promise = ping.play();
+                if (promise !== undefined) {
+                    promise.catch(() => {}).then(() => {});
+                }
+            }
+            function pauseAllMedia() {
+                for (const media of document.getElementsByTagName("audio")) {
+                    media.pause();
+                }
+                for (const media of document.getElementsByTagName("video")) {
+                    media.pause();
+                }
+            }
+            const client = {
+                guilds: new Map(),
+                emojis: new Map(),
+                dmChannels: new Map(),
+                textChannels: new Map(),
+                pendingChannels: new Map(),
+                selectedTextChannel: new Map(),
+                thisDMChannelId: EVERYONE,
+                thisGuildId: DM,
+                thisChannelType: DM_CHANNEL,
+                get thisTextChannelId() {
+                    return this.selectedTextChannel.get(this.thisGuildId);
+                },
+                set thisTextChannelId(channel_id) {
+                    this.selectedTextChannel.set(this.thisGuildId, channel_id);
+                },
+                uniqueEmojiName(name) {
+                    let key = name, i = 0;
+                    while (client.emojis.has(key)) {
+                        i++;
+                        key = `${name}-${i}`;
+                    }
+                    return key;
+                }
+            };
+            class Http {
+                static async get(url) {
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("GET", url, true);
+                        xhr.onreadystatechange = () => {
+                            if (xhr.readyState === XMLHttpRequest.DONE) {
+                                if (xhr.status === 200) {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.status) {
+                                        resolve(response);
+                                    } else {
+                                        reject(response.error);
+                                    }
+                                } else if (xhr.status === 503) {
+                                    reject("Rate limit");
+                                } else {
+                                    reject("Network error");
+                                }
+                            }
+                        };
+                        xhr.send();
+                    });
+                }
+                static async post(url, data) {
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", url, true);
+                        xhr.setRequestHeader("Content-type", "application/json");
+                        xhr.onreadystatechange = () => {
+                            if (xhr.readyState === XMLHttpRequest.DONE) {
+                                if (xhr.status === 200) {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.status) {
+                                        resolve(response);
+                                    } else {
+                                        reject(response.error);
+                                    }
+                                } else if (xhr.status === 503) {
+                                    reject("Rate limit");
+                                } else if (xhr.status === 413) {
+                                    reject("File too large");
+                                } else {
+                                    reject("Network error");
+                                }
+                            }
+                        };
+                        xhr.send(data);
+                    });
+                }
+            }
+            class Guild {
+                constructor(guild, options = { override: false, position: 1 }) {
+                    this.id = guild.id;
+                    if (!options.override) {
+                        this.setup(guild, options.position);
+                    }
+                }
+                setup(guild, position) {
+                    this.name = guild.name;
+                    this.icon = guild.icon;
+                    this.owner = guild.owner;
+                    this.channels = new Map();
+                    this.members = new Map();
+                    this.emojis = new Map();
+                    for (const emoji of guild.emojis) {
+                        client.emojis.set(client.uniqueEmojiName(emoji.name), {
+                            id: emoji.id,
+                            name: emoji.name
+                        });
+                        this.emojis.set(emoji.id, emoji.name);
+                    }
+                    this.createUI();
+                    if (this.owner) {
+                        this.createManageButton();
+                        this.createNewChannelButton();
+                    } else {
+                        this.createLeaveButton();
+                    }
+                    for (let i = 0; i < guild.channels.length; i++) {
+                        new TextChannel(guild.channels[i], this, i > 0);
+                    }
+                    const div = document.createElement("div"); div.classList.add("guild");
+                    const img = document.createElement("div"); img.classList.add("icon"); img.style.backgroundImage = `url("${this.icon}")`;
+                    const h3 = document.createElement("h3"); h3.textContent = this.name;
+                    div.addEventListener("click", () => this.change());
+                    div.appendChild(img);
+                    div.appendChild(h3);
+                    if (position < 0) {
+                        guilds.insertBefore(div, guilds.getElementsByClassName("guild")[0] || null);
+                    } else {
+                        guilds.appendChild(div);
+                    }
+                    this.self = div;
+                    client.guilds.set(this.id, this);
+                }
+                createUI() {
+                    const ui = document.createElement("div"); ui.classList.add("ui");
+                    const header = document.createElement("div"); header.classList.add("header");
+                    const icon = document.createElement("div"); icon.classList.add("icon"); icon.style.backgroundImage = `url("${this.icon}")`;
+                    const p = document.createElement("p"); p.textContent = this.name;
+                    const options = document.createElement("div"); options.classList.add("options");
+                    const type = document.createElement("p"); type.classList.add("type");
+                    const div = document.createElement("div"); div.classList.add("channels");
+                    header.appendChild(icon);
+                    header.appendChild(p);
+                    options.appendChild(type);
+                    ui.appendChild(header);
+                    ui.appendChild(options);
+                    ui.appendChild(div);
+                    channels.appendChild(ui);
+                    this.ui = {
+                        self: ui,
+                        header: header,
+                        options: options,
+                        channels: div
+                    };
+                }
+                createManageButton() {
+                    const button = document.createElement("div"); button.classList.add("manage-button");
+                    button.addEventListener("click", () => {
+                        for (const button of manage.getElementsByClassName("selected")) {
+                            button.classList.remove("selected");
+                        }
+                        document.getElementById("about-button").classList.add("selected");
+                        while (manageEmojis.firstChild) {
+                            manageEmojis.removeChild(manageEmojis.firstChild);
+                        }
+                        while (manageInvites.firstChild) {
+                            manageInvites.removeChild(manageInvites.firstChild);
+                        }
+                        const fragment = document.createDocumentFragment();
+                        for (const [id, name] of this.emojis) {
+                            const div = document.createElement("div"); div.classList.add("emoji");
+                            const img = document.createElement("div"); img.classList.add("img"); img.style.backgroundImage = `url("/emojis/${id}.png")`;
+                            const input = document.createElement("input"); input.value = `${name}`;
+                            input.addEventListener("blur", async () => {
+                                const change = input.value;
+                                if (change.length > 0 && change !== name) {
+                                    try {
+                                        await Http.post(`/guilds/${this.id}/emoji/${id}/update`, JSON.stringify({
+                                            name: change
+                                        }));
+                                        for (const [key, value] of client.emojis) {
+                                            if (value.id === id) {
+                                                client.emojis.delete(key);
+                                                client.emojis.set(client.uniqueEmojiName(change), {
+                                                    id: id,
+                                                    name: change
+                                                });
+                                                break;
+                                            }
+                                        }
+                                        this.emojis.set(id, change);
+                                    } catch (error) {
+                                        swal({
+                                            title: "Oops",
+                                            text: error,
+                                            icon: "error"
+                                        });
+                                    }
+                                }
+                            });
+                            const del = document.createElement("button");
+                            del.addEventListener("click", () => {
+                                swal({
+                                    title: "Confirm?",
+                                    text: "Deleting this emoji will result in an empty picture in all messages where this emoji is used.",
+                                    icon: "warning",
+                                    buttons: true
+                                }).then(async ok => {
+                                    if (ok) {
+                                        try {
+                                            await Http.post(`/guilds/${this.id}/emoji/${id}/delete`, null);
+                                            manageEmojis.removeChild(div);
+                                        } catch (error) {
+                                            swal({
+                                                title: "Oops",
+                                                text: error,
+                                                icon: "error"
+                                            });
+                                        }
+                                    }
+                                });
+                            });
+                            div.appendChild(img);
+                            div.appendChild(input);
+                            div.appendChild(del);
+                            fragment.appendChild(div);
+                        }
+                        manageEmojis.appendChild(fragment);
+                        document.getElementById("overview").getElementsByClassName("icon")[0].style.backgroundImage = `url("${this.icon}")`;
+                        document.getElementById("update-guild").getElementsByTagName("input")[0].value = this.name;
+                        document.getElementById("manage-invites").hide();
+                        document.getElementById("manage-emojis").hide();
+                        document.getElementById("manage-about").show();
+                        manage.classSwitch("hide", "show");
+                    });
+                    this.ui.options.appendChild(button);
+                }
+                createNewChannelButton() {
+                    const button = document.createElement("div"); button.classList.add("new-channel-button");
+                    button.addEventListener("click", () => {
+                        document.getElementById("new").hide();
+                        document.getElementById("join").hide();
+                        document.getElementById("new-channel").show();
+                        overlay.classSwitch("hide", "show");
+                        setTimeout(() => show.overlay = true, 300);
+                    });
+                    this.ui.options.appendChild(button);
+                }
+                createLeaveButton() {
+                    const button = document.createElement("button"); button.classList.add("leave-button");
+                    button.addEventListener("click", () => {
+                        swal({
+                            title: "Are you sure?",
+                            text: `This will remove you from the community ${this.name}. You can rejoin with an invite.`,
+                            icon: "warning",
+                            buttons: true
+                        }).then(async ok => {
+                            if (ok) {
+                                try {
+                                    await Http.post(`guilds/${this.id}/leave`, null);
+                                } catch (error) {
+                                    swal({
+                                        title: "Oops",
+                                        text: error,
+                                        icon: "error"
+                                    });
+                                }
+                            }
+                        });
+                    });
+                    this.ui.options.appendChild(button);
+                }
+                async change() {
+                    main.classSwitch("show", "hide");
+                    setTimeout(() => show.main = false, 300);
+                    if (!changing) {
+                        if (this.id !== client.thisGuildId) {
+                            changing = true;
+                            loading.show();
+                            pauseAllMedia();
+                            textarea.disabled = true;
+                            disableAttachments(true);
+                            whoistyping.textContent = "";
+                            if (client.thisGuildId !== DM) {
+                                client.guilds.get(client.thisGuildId).ui.self.hide();
+                                client.textChannels.get(client.thisTextChannelId).messages.hide();
+                            } else {
+                                if (show.stats) {
+                                    chat.style.width = "calc(100% - 250px)";
+                                    document.getElementById("stats").classSwitch("slideleft", "slideright");
+                                    setTimeout(() => {
+                                        client.dmChannels.get(client.thisDMChannelId).stats.hide();
+                                        show.stats = false;
+                                    }, 300);
+                                }
+                            }
+                            client.thisGuildId = this.id;
+                            client.thisChannelType = TEXT_CHANNEL;
+                            const channel = client.thisTextChannelId ? this.channels.get(client.thisTextChannelId) : this.channels.first();
+                            client.thisTextChannelId = channel.id;
+                            channel.self.classList.add("selected");
+                            this.ui.self.show();
+                            client.dmChannels.get(client.thisDMChannelId).messages.hide();
+                            channel.messages.show();
+                            dm.hide();
+                            channels.show();
+                            if (!channel.messages.hasChildNodes() && !channel.allMessagesLoaded) {
+                                await channel.fetchMessages();
+                            }
+                            messages.scrollDown();
+                            textarea.disabled = false;
+                            disableAttachments(false);
+                            loading.hide();
+                            info.disabled = true;
+                            textarea.placeholder = `Message #${channel.name}`;
+                            setTimeout(() => changing = false, 100);
+                        }
+                    }
+                }
+            }
+            class Channel {
+                constructor() {
+                    this.lastMessageId = null;
+                    this.allMessagesLoaded = false;
+                }
+                createMessage(message, scrollDown = false, addToAttachments = false) {
+                    const div = document.createElement("div"); div.classList.add("message"); div.id = message.id;
+                    const img = document.createElement("div"); img.classList.add("avatar"); img.style.backgroundImage = `url("${message.author.avatar}")`;
+                    const content = document.createElement("div"); content.classList.add("content");
+                    const p = document.createElement("p"); p.textContent = message.author.username;
+                    const span = document.createElement("span"); span.textContent = `#${message.author.tag}`;
+                    const h6 = document.createElement("h6"); h6.textContent = moment(message.date).format("LLL");
+                    const pre = document.createElement("pre"); pre.innerHTML = message.text.escape().replace(/(?:https?:\/\/){1}(?:www\.)?[a-z0-9]+(?:[\-\.][a-z0-9]+)*\.[a-z]{2,}(?::[0-9]+)?(?:\/\S*)?/, "<a href='$&' target='_blank'>$&</a>").resolveEmojis();
+                    p.addEventListener("click", () => {
+                        splash.getElementsByTagName("p")[0].textContent = `${message.author.username}#${message.author.tag}`;
+                        splash.getElementsByClassName("avatar")[0].style.backgroundImage = `url("${message.author.avatar}")`;
+                        splash.classSwitch("hide", "show");
+                        setTimeout(() => show.splash = true, 300);
+                    });
+                    p.appendChild(span);
+                    content.appendChild(p);
+                    content.appendChild(h6);
+                    content.appendChild(pre);
+                    if (message.attachment) {
+                        if (this.type === DM_CHANNEL && this.id !== EVERYONE) {
+                            if (this.hasLoadedAttachments) {
+                                const attachment = this.createAttachment(message.attachment, scrollDown, (addToAttachments && this.type === DM_CHANNEL));
+                                content.appendChild(attachment);
+                            } else {
+                                this.hasLoadedAttachments = true;
+                                ws.send(JSON.stringify({
+                                    type: "ATTACHMENTS",
+                                    channel_id: this.id
+                                }));
+                                const attachment = this.createAttachment(message.attachment, scrollDown, false);
+                                content.appendChild(attachment);
+                            }
+                        } else {
+                            const attachment = this.createAttachment(message.attachment, scrollDown, false);
+                            content.appendChild(attachment);
+                        }
+                    }
+                    div.appendChild(img);
+                    div.appendChild(content);
+                    if (message.author.id === client.user.id) {
+                        const del = document.createElement("button"); del.classList.add("delete");
+                        del.addEventListener("click", () => {
+                            swal({
+                                title: "Confirm?",
+                                text: "Are you sure you want to delete this message?",
+                                icon: "warning",
+                                buttons: true
+                            }).then(ok => {
+                                if (ok) {
+                                    ws.send(JSON.stringify({
+                                        type: this.type === DM_CHANNEL ? "DM_MESSAGE_DELETE" : "TEXT_MESSAGE_DELETE",
+                                        channel_id: this.id,
+                                        message_id: message.id
+                                    }));
+                                }
+                            });
+                        });
+                        div.appendChild(del);
+                    }
+                    return div;
+                }
+                createAttachment(name, scrollDown = false, addToAttachments = false) {
+                    const extension = name.substr(name.lastIndexOf(".") + 1);
+                    if (images.includes(extension)) {
+                        const a = document.createElement("a"); a.href = `/attachments/${this.id}/${name}`; a.target = "_blank"; a.setAttribute("attachment", name);
+                        const img = document.createElement("img"); img.classList.add("attachment"); img.src = `/attachments/${this.id}/${name}`;
+                        if (scrollDown) {
+                            img.addEventListener("load", () => {
+                                if (this.type === DM_CHANNEL && this.id === client.thisDMChannelId) {
+                                    if (!scrolledUp) {
+                                        messages.scrollDown();
+                                    }
+                                } else if (this.type === TEXT_CHANNEL && this.id === client.thisTextChannelId) {
+                                    if (!scrolledUp) {
+                                        messages.scrollDown();
+                                    }
+                                }
+                            });
+                        }
+                        a.appendChild(img);
+                        if (addToAttachments) {
+                            this.imageAttachments.insertBefore(a.cloneNode(true), this.imageAttachments.firstChild.nextSibling);
+                        }
+                        return a;
+                    } else if (video.hasOwnProperty(extension)) {
+                        const media = document.createElement("video"); media.classList.add("attachment"); media.controls = true; media.setAttribute("attachment", name);
+                        const source = document.createElement("source"); source.src = `/attachments/${this.id}/${name}`; source.type = video[extension];
+                        if (scrollDown) {
+                            media.addEventListener("loadedmetadata", () => {
+                                if (this.type === DM_CHANNEL && this.id === client.thisDMChannelId) {
+                                    if (!scrolledUp) {
+                                        messages.scrollDown();
+                                    }
+                                } else if (this.type === TEXT_CHANNEL && channel_id === client.thisTextChannelId) {
+                                    if (!scrolledUp) {
+                                        messages.scrollDown();
+                                    }
+                                }
+                            });
+                        }
+                        media.appendChild(source);
+                        if (addToAttachments) {
+                            this.videoAttachments.insertBefore(media.cloneNode(true), this.videoAttachments.firstChild.nextSibling);
+                        }
+                        return media;
+                    } else if (audio.hasOwnProperty(extension)) {
+                        const media = document.createElement("audio"); media.classList.add("attachment"); media.controls = true; media.setAttribute("attachment", name);
+                        const source = document.createElement("source"); source.src = `/attachments/${this.id}/${name}`; source.type = audio[extension];
+                        media.appendChild(source);
+                        if (addToAttachments) {
+                            this.audioAttachments.insertBefore(media.cloneNode(true), this.audioAttachments.firstChild.nextSibling);
+                        }
+                        return media;
+                    } else {
+                        const a = document.createElement("a"); a.href = `/attachments/${this.id}/${name}`; a.target = "_blank"; a.setAttribute("attachment", name);
+                        const img = document.createElement("img"); img.classList.add("attachment", "file"); img.src = `/assets/${hasSVG.includes(extension) ? extension : "file"}.svg`;
+                        a.appendChild(img);
+                        if (addToAttachments) {
+                            this.fileAttachments.insertBefore(a.cloneNode(true), this.fileAttachments.firstChild.nextSibling);
+                        }
+                        return a;
+                    }
+                }
+            }
+            class DMChannel extends Channel {
+                constructor(id, recipient, unread = false, options = { override: false, position: 1 }) {
+                    super();
+                    this.type = DM_CHANNEL;
+                    this.id = id;
+                    this.recipient = recipient;
+                    this.unread = unread;
+                    this.disableAttachments = false;
+                    this.hasLoadedAttachments = false;
+                    if (!options.override) {
+                        this.setup(options.position);
+                    }
+                }
+                setup(position) {
+                    const div = document.createElement("div"); div.classList.add("channel");
+                    const dot = document.createElement("div"); dot.classList.add("dot");
+                    const img = document.createElement("div"); img.classList.add("avatar"); img.style.backgroundImage = `url("${this.recipient.avatar}")`;
+                    const p = document.createElement("p"); p.textContent = this.recipient.username;
+                    const span = document.createElement("span"); span.textContent = `#${this.recipient.tag}`;
+                    const typing = document.createElement("div"); typing.classList.add("typing");
+                    for (let i = 0; i < 3; i++) {
+                        typing.appendChild(document.createElement("span"));
+                    }
+                    if (this.unread) {
+                        dot.style.opacity = "1";
+                    }
+                    p.appendChild(span);
+                    div.appendChild(dot);
+                    div.appendChild(img);
+                    div.appendChild(p);
+                    div.appendChild(typing);
+                    div.addEventListener("click", () => this.change());
+                    friends.appendChild(div);
+                    this.dot = dot;
+                    this.typing = typing;
+                    const message = document.createElement("div"); messages.appendChild(message);
+                    this.messages = message;
+                    if (position < 0) {
+                        friends.insertBefore(div, client.dmChannels.get(EVERYONE).self.nextSibling);
+                    } else {
+                        friends.appendChild(div);
+                    }
+                    this.self = div;
+                    const stats = document.createElement("div"); stats.classList.add("stats");
+                    const avatar = document.createElement("div"); avatar.classList.add("avatar"); avatar.style.backgroundImage = `url("${this.recipient.avatar}")`;
+                    const username = document.createElement("p"); username.textContent = this.recipient.username;
+                    const tag = document.createElement("span"); tag.textContent = `#${this.recipient.tag}`;
+                    const attachments = document.createElement("div"); attachments.classList.add("attachments");
+                    const h3 = document.createElement("h3");
+                    const imageAttachments = document.createElement("div"); imageAttachments.classList.add("image-attachments");
+                    const videoAttachments = document.createElement("div"); videoAttachments.classList.add("video-attachments");
+                    const audioAttachments = document.createElement("div"); audioAttachments.classList.add("audio-attachments");
+                    const fileAttachments = document.createElement("div"); fileAttachments.classList.add("file-attachments");
+                    imageAttachments.appendChild(document.createElement("h6"));
+                    videoAttachments.appendChild(document.createElement("h6"));
+                    audioAttachments.appendChild(document.createElement("h6"));
+                    fileAttachments.appendChild(document.createElement("h6"));
+                    attachments.appendChild(h3);
+                    attachments.appendChild(imageAttachments);
+                    attachments.appendChild(document.createElement("hr"));
+                    attachments.appendChild(videoAttachments);
+                    attachments.appendChild(document.createElement("hr"));
+                    attachments.appendChild(audioAttachments);
+                    attachments.appendChild(document.createElement("hr"));
+                    attachments.appendChild(fileAttachments);
+                    username.appendChild(tag);
+                    stats.appendChild(avatar);
+                    stats.appendChild(username);
+                    stats.appendChild(attachments);
+                    document.getElementById("stats").appendChild(stats);
+                    this.stats = stats;
+                    this.attachments = attachments;
+                    this.imageAttachments = imageAttachments;
+                    this.audioAttachments = audioAttachments;
+                    this.videoAttachments = videoAttachments;
+                    this.fileAttachments = fileAttachments;
+                    client.dmChannels.set(this.id, this);
+                }
+                async change() {
+                    if (!changing) {
+                        changing = true;
+                        loading.show();
+                        pauseAllMedia();
+                        textarea.disabled = true;
+                        disableAttachments(true);
+                        whoistyping.textContent = "";
+                        while (search.firstChild) {
+                            search.removeChild(search.firstChild);
+                        }
+                        search.hide();
+                        pending.hide();
+                        friends.show();
+                        info.disabled = false;
+                        const channel = client.dmChannels.get(client.thisDMChannelId);
+                        channel.self.classList.remove("selected");
+                        channel.messages.hide();
+                        if (channel.stats) {
+                            channel.stats.hide();
+                        }
+                        if (this.stats) {
+                            this.stats.show();
+                            if (show.stats && !document.getElementById("stats").classList.contains("slideleft")) {
+                                chat.style.width = "calc(100% - 500px)";
+                                document.getElementById("stats").classSwitch("slideright", "slideleft");
+                            }
+                        } else {
+                            chat.style.width = "calc(100% - 250px)";
+                            document.getElementById("stats").classSwitch("slideleft", "slideright");
+                        }
+                        this.self.classList.add("selected");
+                        this.dot.style.opacity = "0";
+                        this.messages.show();
+                        textarea.placeholder = this.id !== EVERYONE ? `Message @${this.recipient.username}#${this.recipient.tag}` : `Message @${this.recipient.username}`;
+                        if (!this.messages.hasChildNodes() && !this.allMessagesLoaded) {
+                            await this.fetchMessages();
+                        }
+                        messages.scrollDown();
+                        textarea.disabled = false;
+                        disableAttachments(this.disableAttachments);
+                        loading.hide();
+                        client.thisDMChannelId = this.id;
+                        client.thisChannelType = DM_CHANNEL;
+                        if (this.unread) {
+                            this.unread = false;
+                            ws.send(JSON.stringify({
+                                type: "ACKNOWLEDGEMENT",
+                                channel_id: this.id
+                            }));
+                        }
+                        setTimeout(() => changing = false, 100);
+                    }
+                }
+                async fetchMessages() {
+                    const url = this.lastMessageId === null ? `/channels/${this.id}/messages` : `/channels/${this.id}/messages?id=${this.lastMessageId}`;
+                    try {
+                        const response = await Http.get(url);
+                        const messageIds = [];
+                        if (response.messages.length > 0) {
+                            const fragment = document.createDocumentFragment();
+                            const scrollDown = this.lastMessageId === null;
+                            for (const message of response.messages) {
+                                fragment.insertBefore(this.createMessage(message, scrollDown), fragment.firstChild);
+                                messageIds.push(message.id);
+                            }
+                            this.messages.insertBefore(fragment, this.messages.firstChild);
+                            this.lastMessageId = messageIds[messageIds.length - 1];
+                        } else if (response.messages.length === 0) {
+                            this.allMessagesLoaded = true;
+                        }
+                        return messageIds;
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                }
+            }
+            class TextChannel extends Channel {
+                constructor(channel, guild, deletable = false) {
+                    super();
+                    this.id = channel.id;
+                    this.type = TEXT_CHANNEL;
+                    this.name = channel.name;
+                    this.guild = guild;
+                    this.typing = new Set();
+                    this.disableAttachments = false;
+                    this.setup(deletable);
+                }
+                setup(deletable) {
+                    const div = document.createElement("div"); div.classList.add("channel");
+                    const p = document.createElement("p"); p.textContent = this.name;
+                    div.appendChild(p);
+                    if (this.guild.owner) {
+                        const button = document.createElement("button");
+                        button.addEventListener("click", async () => {
+                            await this.change();
+                            document.getElementById("update-channel").getElementsByTagName("input")[0].value = this.name;
+                            edit.classSwitch("hide", "show");
+                            setTimeout(() => show.edit = true, 300);
+                        });
+                        div.appendChild(button);
+                    }
+                    div.addEventListener("click", () => this.change());
+                    const message = document.createElement("div"); messages.appendChild(message);
+                    this.guild.ui.channels.appendChild(div);
+                    this.guild.channels.set(this.id, this);
+                    this.self = div;
+                    this.messages = message;
+                    client.textChannels.set(this.id, this);
+                }
+                delete() {
+                    this.guild.channels.delete(this.id);
+                    client.textChannels.delete(this.id);
+                }
+                refreshUsersTyping() {
+                    if (this.typing.size > 3) {
+                        whoistyping.textContent = `${this.typing.size} users are typing...`;
+                    } else if (this.typing.size === 3) {
+                        const iterator = this.typing.values();
+                        whoistyping.textContent = `${iterator.next().value}, ${iterator.next().value} and ${iterator.next().value} are typing...`;
+                    } else if (this.typing.size === 2) {
+                        const iterator = this.typing.values();
+                        whoistyping.textContent = `${iterator.next().value} and ${iterator.next().value} are typing...`;
+                    } else if (this.typing.size === 1) {
+                        const iterator = this.typing.values();
+                        whoistyping.textContent = `${iterator.next().value} is typing...`;
+                    } else {
+                        whoistyping.textContent = "";
+                    }
+                }
+                async change() {
+                    if (!changing) {
+                        if (this.id !== client.thisTextChannelId) {
+                            changing = true;
+                            loading.show();
+                            pauseAllMedia();
+                            textarea.disabled = true;
+                            disableAttachments(true);
+                            const channel = this.guild.channels.get(client.thisTextChannelId);
+                            channel.self.classList.remove("selected");
+                            this.self.classList.add("selected");
+                            channel.messages.hide();
+                            this.messages.show();
+                            textarea.placeholder = `Message #${this.name}`;
+                            if (!this.messages.hasChildNodes() && !this.allMessagesLoaded) {
+                                await this.fetchMessages();
+                            }
+                            messages.scrollDown();
+                            textarea.disabled = false;
+                            disableAttachments(this.disableAttachments);
+                            loading.hide();
+                            client.thisTextChannelId = this.id;
+                            client.thisChannelType = TEXT_CHANNEL;
+                            setTimeout(() => changing = false, 100);
+                        }
+                    }
+                }
+                async fetchMessages() {
+                    const url = this.lastMessageId === null ? `/guilds/${this.guild.id}/${this.id}/messages` : `/guilds/${this.guild.id}/${this.id}/messages?id=${this.lastMessageId}`;
+                    try {
+                        const response = await Http.get(url);
+                        const messageIds = [];
+                        if (response.messages.length > 0) {
+                            const fragment = document.createDocumentFragment();
+                            const scrollDown = this.lastMessageId === null;
+                            for (const message of response.messages) {
+                                fragment.insertBefore(this.createMessage(message, scrollDown), fragment.firstChild);
+                                messageIds.push(message.id);
+                            }
+                            this.messages.insertBefore(fragment, this.messages.firstChild);
+                            this.lastMessageId = messageIds[messageIds.length - 1];
+                        } else if (response.messages.length === 0) {
+                            this.allMessagesLoaded = true;
+                        }
+                        return messageIds;
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                }
+            }
+            class PendingChannel extends Channel {
+                constructor(channel) {
+                    super();
+                    this.id = channel.id;
+                    this.recipient = channel.recipient;
+                    this.setup(channel.acceptable);
+                }
+                setup(acceptable) {
+                    const div = document.createElement("div"); div.classList.add("channel", "pending");
+                    const img = document.createElement("div"); img.classList.add("avatar"); img.style.backgroundImage = `url("${this.recipient.avatar}")`;
+                    const p = document.createElement("p"); p.textContent = this.recipient.username;
+                    const span = document.createElement("span"); span.textContent = `#${this.recipient.tag}`;
+                    const buttons = document.createElement("div"); buttons.classList.add("buttons");
+                    const button = document.createElement("button");
+                    buttons.appendChild(button);
+                    p.appendChild(span);
+                    div.appendChild(img);
+                    div.appendChild(p);
+                    div.appendChild(buttons);
+                    if (!acceptable) {
+                        button.classList.add("cancel");
+                        button.textContent = "Cancel";
+                        button.addEventListener("click", () => this.cancel());
+                    } else {
+                        button.classList.add("cancel");
+                        button.textContent = "Cancel";
+                        button.addEventListener("click", () => this.cancel());
+                        const button2 = document.createElement("button");
+                        button2.classList.add("accept");
+                        button2.textContent = "Accept";
+                        button2.addEventListener("click", () => this.accept());
+                        buttons.appendChild(button2);
+                    }
+                    pending.appendChild(div);
+                    this.removable = div;
+                    client.pendingChannels.set(this.id, this);
+                }
+                async accept() {
+                    try {
+                        await Http.post(`/users/accept/${this.id}`, null);
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                }
+                async cancel() {
+                    try {
+                        await Http.post(`/users/cancel/${this.id}`, null);
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                }
+            }
+            const everyone = new DMChannel(EVERYONE, { username: "everyone" }, false, { override: true });
+            everyone.hasLoadedAttachments = true;
+            everyone.disableAttachments = true;
+            everyone.self = document.getElementById("dm-everyone");
+            everyone.dot = document.getElementById("dm-everyone").getElementsByClassName("dot")[0];
+            everyone.messages = document.getElementById("chat-everyone");
+            everyone.self.addEventListener("click", () => {
+                everyone.change();
+                info.disabled = true;
+            });
+            client.dmChannels.set(EVERYONE, everyone);
+            info.disabled = true;
+            disableAttachments(true);
+            function socket(reconnect = false) {
+                ws = new WebSocket(`${window.location.protocol === "http:" ? "ws" : "wss"}://${window.location.hostname}/chat`);
+                ws.addEventListener("open", () => {
+                    if (!hasLoadedWS) {
+                        hasLoadedWS = true;
+                    }
+                    if (window.interval) {
+                        clearInterval(window.interval);
+                        delete window.interval;
+                    }
+                    ws.send(JSON.stringify({
+                        type: reconnect ? "RECONNECT" : "HELLO"
+                    }));
+                    ws.addEventListener("message", async event => {
+                        const response = JSON.parse(event.data);
+                        if (response.status) {
+                            switch (response.type) {
+                                case "MESSAGE":
+                                {
+                                    let messageIds, loadedOlder = false;
+                                    const message = response;
+                                    const { channel_id } = message;
+                                    const channel = client.dmChannels.get(channel_id) || client.textChannels.get(channel_id);
+                                    const isEveryone = channel.id === EVERYONE;
+                                    if (channel.type === TEXT_CHANNEL) {
+                                        if (channel.id !== client.thisTextChannelId) {
+                                            if (!channel.messages.hasChildNodes() && !channel.allMessagesLoaded) {
+                                                messageIds = await channel.fetchMessages();
+                                                loadedOlder = true;
+                                            }
+                                        }
+                                    } else if (channel.type === DM_CHANNEL) {
+                                        if (!windowIsActive && !isEveryone && message.author.id !== client.user.id) {
+                                            sound();
+                                        }
+                                        if (channel.id === client.thisDMChannelId) {
+                                            if (windowIsActive && !scrolledUp && !isEveryone && message.author.id !== client.user.id) {
+                                                ws.send(JSON.stringify({
+                                                    type: "ACKNOWLEDGEMENT",
+                                                    channel_id: channel.id
+                                                }));
+                                            } else if (message.author.id !== client.user.id) {
+                                                channel.unread = true;
+                                            }
+                                        } else {
+                                            if (!channel.messages.hasChildNodes() && !channel.allMessagesLoaded) {
+                                                messageIds = await channel.fetchMessages();
+                                                loadedOlder = true;
+                                            }
+                                            channel.dot.style.opacity = "1";
+                                            if (!isEveryone && message.author.id !== client.user.id) {
+                                                channel.unread = true;
+                                            }
+                                        }
+                                    }
+                                    if (!loadedOlder || !messageIds.includes(message.id)) {
+                                        channel.messages.appendChild(channel.createMessage(message, true, true));
+                                        if (channel.id === client.thisDMChannelId) {
+                                            if (!scrolledUp) {
+                                                messages.scrollDown();
+                                            }
+                                        } else if (channel.type === TEXT_CHANNEL && channel.id === client.thisTextChannelId) {
+                                            if (!scrolledUp) {
+                                                messages.scrollDown();
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                                case "TYPING":
+                                {
+                                    const { channel_id, username } = response;
+                                    const channel = client.dmChannels.get(channel_id) || client.textChannels.get(channel_id);
+                                    if (channel.type === DM_CHANNEL) {
+                                        if (client.thisChannelType === DM_CHANNEL && channel.id === client.thisDMChannelId) {
+                                            channel.typing.show();
+                                            whoistyping.textContent = `${username} is typing..`;
+                                            setTimeout(() => {
+                                                channel.typing.hide();
+                                                whoistyping.textContent = "";
+                                            }, 4000);
+                                        } else {
+                                            channel.typing.show();
+                                            setTimeout(() => {
+                                                channel.typing.hide();
+                                            }, 4000);
+                                        }
+                                    } else if (channel.type === TEXT_CHANNEL) {
+                                        if (client.thisChannelType === TEXT_CHANNEL && channel.id === client.thisTextChannelId) {
+                                            channel.typing.add(username);
+                                            channel.refreshUsersTyping();
+                                            setTimeout(() => {
+                                                channel.typing.delete(username);
+                                                channel.refreshUsersTyping();
+                                            }, 4000);
+                                        }
+                                    }
+                                }
+                                break;
+                                case "MESSAGE_DELETE":
+                                {
+                                    const { channel_id, message_id, attachment } = response;
+                                    const message = document.getElementById(message_id);
+                                    if (message) {
+                                        const channel = client.dmChannels.get(channel_id) || client.textChannels.get(channel_id);
+                                        if (channel) {
+                                            message.parentNode.removeChild(message);
+                                            if (attachment && channel.type === DM_CHANNEL && channel.id !== EVERYONE) {
+                                                for (const node of channel.attachments.childNodes) {
+                                                    for (const child of node.childNodes) {
+                                                        if (child.getAttribute("attachment") === attachment) {
+                                                            child.parentNode.removeChild(child);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                                case "ATTACHMENTS":
+                                {
+                                    const channel = client.dmChannels.get(response.channel_id);
+                                    if (channel) {
+                                        for (const name of response.attachments) {
+                                            channel.createAttachment(name, false, true);
+                                        }
+                                    }
+                                }
+                                break;
+                                case "DM_ACCEPT":
+                                {
+                                    const channel = client.pendingChannels.get(response.channel_id);
+                                    new DMChannel(channel.id, channel.recipient, false, { position: -1 });
+                                    pending.removeChild(channel.removable);client.pendingChannels.delete(channel.id);
+                                    if (friendsButton.classList.contains("focusout")) {
+                                        friendsDot.style.opacity = "1";
+                                    }
+                                    if (client.pendingChannels.size === 0) {
+                                        pendingDot.style.opacity = "0";
+                                    }
+                                }
+                                break;
+                                case "DM_CANCEL":
+                                {
+                                    const channel = client.pendingChannels.get(response.channel_id);
+                                    pending.removeChild(channel.removable);
+                                    client.pendingChannels.delete(channel.id);
+                                    if (client.pendingChannels.size === 0) {
+                                        pendingDot.style.opacity = "0";
+                                    }
+                                }
+                                break;
+                                case "DM_CREATE":
+                                {
+                                    new PendingChannel(response.channel);
+                                    if (pendingButton.classList.contains("focusout")) {
+                                        pendingDot.style.opacity = "1";
+                                    }
+                                }
+                                break;
+                                case "GUILD_CREATE":
+                                {
+                                    if (guilds.getElementsByTagName("h1")[0]) {
+                                        guilds.removeChild(guilds.getElementsByTagName("h1")[0]);
+                                    }
+                                    new Guild(response.guild, { position: -1 });
+                                }
+                                break;
+                                case "GUILD_UPDATE":
+                                {
+                                    const guild = client.guilds.get(response.guild.id);
+                                    guild.name = response.guild.name;
+                                    guild.icon = response.guild.icon;
+                                    guild.self.getElementsByClassName("icon")[0].style.backgroundImage = `url("${guild.icon}")`;
+                                    guild.self.getElementsByTagName("h3")[0].textContent = guild.name;
+                                    guild.ui.header.getElementsByClassName("icon")[0].style.backgroundImage = `url("${guild.icon}")`;
+                                    guild.ui.header.getElementsByTagName("p")[0].textContent = guild.name;
+                                }
+                                break;
+                                case "GUILD_DELETE":
+                                {
+                                    const guild = client.guilds.get(response.guild_id);
+                                    if (guild.id === client.thisGuildId) {
+                                        if (manage.classList.contains("show")) {
+                                            manage.classSwitch("show", "hide");
+                                        }
+                                        document.getElementById("button").click();
+                                    }
+                                    for (const [id, channel] of guild.channels) {
+                                        client.textChannels.delete(id);
+                                        messages.removeChild(channel.messages);
+                                    }
+                                    channels.removeChild(guild.ui.self);
+                                    guilds.removeChild(guild.self);
+                                    for (const [id,] of guild.emojis) {
+                                        for (const [key, value] of client.emojis) {
+                                            if (value.id === id) {
+                                                client.emojis.delete(key);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    client.guilds.delete(guild.id);
+                                    if (client.guilds.size === 0) {
+                                        if (main.getElementsByTagName("h1")[0] === undefined) {
+                                            const h1 = document.createElement("h1"); h1.classList.add("nothing");
+                                            main.appendChild(h1);
+                                        }
+                                    }
+                                }
+                                break;
+                                case "TEXT_CHANNEL_CREATE":
+                                {
+                                    new TextChannel(response.channel, client.guilds.get(response.guild_id), true);
+                                }
+                                break;
+                                case "TEXT_CHANNEL_UPDATE":
+                                {
+                                    client.textChannels.get(response.channel.id).self.getElementsByTagName("p")[0].textContent = response.channel.name;
+                                }
+                                break;
+                                case "TEXT_CHANNEL_DELETE":
+                                {
+                                    const guild = client.guilds.get(response.guild_id);
+                                    const channel = guild.channels.get(response.channel_id);
+                                    messages.removeChild(channel.messages);
+                                    guild.ui.channels.removeChild(channel.self);
+                                    guild.channels.get(channel.id).delete();
+                                    if (response.channel_id === client.thisTextChannelId) {
+                                        const substitute = guild.channels.first();
+                                        substitute.self.classList.add("selected");
+                                        substitute.messages.show();
+                                        messages.scrollDown();
+                                        textarea.placeholder = `Message #${substitute.name}`;
+                                        client.selectedTextChannel.set(response.guild_id, substitute.id);
+                                    }
+                                }
+                                break;
+                                case "GUILD_EMOJI_CREATE":
+                                {
+                                    const guild = client.guilds.get(response.guild_id);
+                                    for (const emoji of response.emojis) {
+                                        client.emojis.set(client.uniqueEmojiName(emoji.name), {
+                                            id: emoji.id,
+                                            name: emoji.name
+                                        });
+                                        guild.emojis.set(emoji.id, emoji.name);
+                                    }
+                                }
+                                break;
+                                case "GUILD_EMOJI_DELETE":
+                                {
+                                    for (const [key, emoji] of client.emojis) {
+                                        if (emoji.id === response.emoji_id) {
+                                            client.emojis.delete(key);
+                                            break;
+                                        }
+                                    }
+                                    client.guilds.get(response.guild_id).emojis.delete(response.emoji_id);
+                                }
+                                break;
+                                case "GUILDS":
+                                {
+                                    const reference = guilds.getElementsByClassName("guild")[1];
+                                    for (const guild of response.guilds) {
+                                        new Guild(guild);
+                                    }
+                                }
+                                break;
+                                case "DM_CHANNELS":
+                                {
+                                    const array = response.channels;
+                                    let i = 1;
+                                    while (i < array.length) {
+                                        let j = i;
+                                        while (j > 0 && array[j - 1].recipient.username.toLowerCase() > array[j].recipient.username.toLowerCase()) {
+                                            let tmp = array[j - 1];
+                                            array[j - 1] = array[j];
+                                            array[j] = tmp;
+                                            j--;
+                                        }
+                                        i++;
+                                    }
+                                    for (const channel of array) {
+                                        new DMChannel(channel.id, channel.recipient, channel.unread);
+                                    }
+                                }
+                                break;
+                                case "PENDING_REQUESTS":
+                                {
+                                    for (const channel of response.pending) {
+                                        new PendingChannel(channel);
+                                    }
+                                    pendingDot.style.opacity = "1";
+                                }
+                                break;
+                                case "HELLO":
+                                {
+                                    if (!hello) {
+                                        client.user = {
+                                            id: response.user_id
+                                        };
+                                        click.style.backgroundImage = `url("${response.avatar}")`;
+                                        document.getElementById("account").getElementsByClassName("avatar")[0].style.backgroundImage = `url("${response.avatar}")`;
+                                        document.getElementById("username").textContent = `${response.username}#${response.tag}`;
+                                        document.getElementById("email").textContent = response.email;
+                                        document.getElementById("change-username").getElementsByTagName("input")[1].value = response.tag;
+                                        await everyone.fetchMessages();
+                                        loading.hide();
+                                        everyone.messages.show();
+                                        messages.scrollDown();
+                                        textarea.disabled = false;
+                                        changing = false;
+                                        hello = true;
+                                    }
+                                }
+                                break;
+                            }
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: response.error,
+                                icon: "error"
+                            });
+                        }
+                    });
+                });
+                ws.addEventListener("close", error => {
+                    if (!hasLoadedWS) {
+                        swal({
+                            title: "Oops",
+                            text: "Can't connect! Wait a few moments, avoid excessively refreshing the page.",
+                            icon: "warning"
+                        });
+                    }
+                    if (!window.interval) {
+                        window.interval = setInterval(() => {
+                            socket(true);
+                        }, 10000);
+                    }
+                });
+            }
+            socket();
+            messages.addEventListener("scroll", async function() {
+                if (this.scrollTop === 0) {
+                    if (!changing && !loadingUp) {
+                        try {
+                            switch (client.thisChannelType) {
+                                case DM_CHANNEL:
+                                {
+                                    if (!client.dmChannels.get(client.thisDMChannelId).allMessagesLoaded) {
+                                        loadingUp = true;
+                                        const scroll = this.scrollHeight;
+                                        loading.show();
+                                        await client.dmChannels.get(client.thisDMChannelId).fetchMessages();
+                                        loading.hide();
+                                        this.scrollTop = this.scrollHeight - scroll;
+                                        scrolledUp = true;
+                                        loadingUp = false;
+                                    }
+                                }
+                                break;
+                                case TEXT_CHANNEL:
+                                {
+                                    if (!client.textChannels.get(client.thisTextChannelId).allMessagesLoaded) {
+                                        loadingUp = true;
+                                        const scroll = this.scrollHeight;
+                                        loading.show();
+                                        await client.textChannels.get(client.thisTextChannelId).fetchMessages();
+                                        loading.hide();
+                                        this.scrollTop = this.scrollHeight - scroll;
+                                        scrolledUp = true;
+                                        loadingUp = false;
+                                    }
+                                }
+                                break;
+                            }
+                        } catch (error) {
+                            loading.hide();
+                            this.scrollTop = this.scrollHeight - scroll;
+                            scrolledUp = true;
+                            loadingUp = false;
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    }
+                } else if (this.scrollHeight - this.scrollTop === this.clientHeight) {
+                    scrolledUp = false;
+                }
+            });
+            textarea.addEventListener("keydown", function(e) {
+                if (!e.shiftKey && e.key === "Enter") {
+                    e.preventDefault();
+                    const text = this.value.trim().parseEmojis();
+                    this.value = "";
+                    if (text.length > 0) {
+                        if (new Blob([text]).size <= 1024) {
+                            if (!date || Math.floor((Date.now() - date) / 1000) > 10) {
+                                date = Date.now();
+                                count = 1;
+                            } else {
+                                count++;
+                            }
+                            if (count < 10) {
+                                try {
+                                    if (client.thisChannelType === DM_CHANNEL) {
+                                        ws.send(JSON.stringify({
+                                            type: "DM_MESSAGE",
+                                            channel_id: client.thisDMChannelId,
+                                            text: text
+                                        }));
+                                    } else if (client.thisChannelType === TEXT_CHANNEL) {
+                                        ws.send(JSON.stringify({
+                                            type: "TEXT_MESSAGE",
+                                            guild_id: client.thisGuildId,
+                                            channel_id: client.thisTextChannelId,
+                                            text: text
+                                        }));
+                                    }
+                                    cache.attachment = null;
+                                } catch (error) {
+                                    swal({
+                                        title: "Oops",
+                                        text: error,
+                                        icon: "error"
+                                    });
+                                }
+                            } else {
+                                swal({
+                                    title: "Oops",
+                                    text: "Rate limit",
+                                    icon: "error"
+                                });
+                            }
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: "Message is too long",
+                                icon: "error"
+                            });
+                        }
+                    }
+                } else if (!isTyping && ((client.thisChannelType === DM_CHANNEL && client.thisDMChannelId !== EVERYONE) || (client.thisChannelType === TEXT_CHANNEL)) && !keys.includes(e.key)) {
+                    isTyping = true;
+                    ws.send(JSON.stringify({
+                        type: "TYPING",
+                        channel_id: client.thisChannelType === DM_CHANNEL ? client.thisDMChannelId : client.thisTextChannelId
+                    }));
+                    setTimeout(() => isTyping = false, 3000);
+                }
+            });
+            uploadButton.addEventListener("click", async function(e) {
+                e.preventDefault();
+                if (cache.attachment !== null) {
+                    const text = uploadTextarea.value.trim().parseEmojis();
+                    uploadTextarea.value = "";
+                    if (new Blob([text]).size <= 1024) {
+                        const div = document.createElement("div"); div.classList.add("uploading");
+                        const h3 = document.createElement("h3");
+                        const bar = document.createElement("div");
+                        div.appendChild(h3);
+                        div.appendChild(bar);
+                        if (client.thisChannelType === DM_CHANNEL) {
+                            client.dmChannels.get(client.thisDMChannelId).messages.appendChild(div);
+                            upload.classSwitch("show", "hide");
+                            setTimeout(() => show.upload = false, 300);
+                            try {
+                                await Http.post(`/channels/${client.thisDMChannelId}/attachment`, JSON.stringify({
+                                    text: text,
+                                    file: cache.attachment
+                                }));
+                                div.parentNode.removeChild(div);
+                            } catch (error) {
+                                div.parentNode.removeChild(div);
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        } else if (client.thisChannelType === TEXT_CHANNEL) {
+                            try {
+                                client.textChannels.get(client.thisTextChannelId).messages.appendChild(div);
+                                upload.classSwitch("show", "hide");
+                                setTimeout(() => show.upload = false, 300);
+                                await Http.post(`/guilds/${client.thisGuildId}/${client.thisTextChannelId}/attachment`, JSON.stringify({
+                                    text: text,
+                                    file: cache.attachment
+                                }));
+                                div.parentNode.removeChild(div);
+                            } catch (error) {
+                                div.parentNode.removeChild(div);
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        }
+                        
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Message is too long",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "No file set to upload",
+                        icon: "error"
+                    });
+                }
+            });
+            info.addEventListener("click", () => {
+                if (!changing && client.thisChannelType === DM_CHANNEL && client.thisDMChannelId !== EVERYONE) {
+                    const channel = client.dmChannels.get(client.thisDMChannelId);
+                    if (!show.stats) {
+                        channel.stats.show();
+                        if (!channel.hasLoadedAttachments) {
+                            channel.hasLoadedAttachments = true;
+                            ws.send(JSON.stringify({
+                                type: "ATTACHMENTS",
+                                channel_id: channel.id
+                            }));
+                        }
+                        chat.style.width = "calc(100% - 500px)";
+                        document.getElementById("stats").classSwitch("slideright", "slideleft");
+                        setTimeout(() => show.stats = true, 300);
+                    } else {
+                        chat.style.width = "calc(100% - 250px)";
+                        document.getElementById("stats").classSwitch("slideleft", "slideright");
+                        setTimeout(() => {
+                            channel.stats.hide();
+                            show.stats = false;
+                        }, 300);
+                    }
+                }
+            });
+            document.getElementById("file").addEventListener("change", function() {
+                const file = this.files[this.files.length - 1];
+                if (file.size < 3e6) {
+                    const reader = new FileReader();
+                    reader.addEventListener("load", async () => {
+                        cache.attachment = {
+                            file: reader.result,
+                            name: file.name
+                        };
+                        uploadTextarea.value = textarea.value;
+                        const extension = file.name.substr(file.name.lastIndexOf(".") + 1);
+                        if (images.includes(extension)) {
+                            view.style.backgroundImage = `url("${reader.result}")`;
+                        } else if (hasSVG.includes(extension)) {
+                            view.style.backgroundImage = `url("/assets/${extension}.svg")`;
+                        } else {
+                            view.style.backgroundImage = `url("/assets/file.svg")`;
+                        }
+                        this.value = "";
+                        upload.classSwitch("hide", "show");
+                        setTimeout(() => show.upload = true, 300);
+                    });
+                    reader.readAsDataURL(file);
+                } else {
+                    this.value = "";
+                    swal({
+                        title: "Oops",
+                        text: "Maximum attachment size: 3MB",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("search-emojis").addEventListener("keyup", function(e) {
+                if (this.value === "") {
+                    while (emojis.firstChild) {
+                        emojis.removeChild(emojis.firstChild);
+                    }
+                    const fragment = document.createDocumentFragment();
+                    for (const [key, emoji] of client.emojis) {
+                        const div = document.createElement("div");
+                        div.classList.add("emoji");
+                        div.style.backgroundImage = `url("/emojis/${emoji.id}.png")`;
+                        div.addEventListener("mouseover", () => {
+                            document.getElementById("search-emojis").placeholder = `:${key}:`;
+                        });
+                        div.addEventListener("click", () => {
+                            textarea.value += `:${key}: `;
+                            textarea.focus();
+                            textarea.selectionStart = textarea.value.length;
+                        });
+                        fragment.appendChild(div);
+                    }
+                    emojis.appendChild(fragment);
+                } else {
+                    while (emojis.firstChild) {
+                        emojis.removeChild(emojis.firstChild);
+                    }
+                    if (client.emojis.size > 0) {
+                        const fragment = document.createDocumentFragment();
+                        for (const [key, emoji] of client.emojis) {
+                            if (key.toLowerCase().includes(this.value.toLowerCase())) {
+                                const div = document.createElement("div");
+                                div.classList.add("emoji");
+                                div.style.backgroundImage = `url("/emojis/${emoji.id}.png")`;
+                                div.addEventListener("mouseover", () => {
+                                    document.getElementById("search-emojis").placeholder = `:${key}:`;
+                                });
+                                div.addEventListener("click", () => {
+                                    textarea.value += `:${key}: `;
+                                    textarea.focus();
+                                    textarea.selectionStart = textarea.value.length;
+                                });
+                                fragment.appendChild(div);
+                            }
+                        }
+                        emojis.appendChild(fragment);
+                    }
+                }
+            });
+            document.getElementById("open-emojis").addEventListener("click", () => {
+                while (emojis.firstChild) {
+                    emojis.removeChild(emojis.firstChild);
+                }
+                if (client.emojis.size > 0) {
+                    const fragment = document.createDocumentFragment();
+                    for (const [key, emoji] of client.emojis) {
+                        const div = document.createElement("div");
+                        div.classList.add("emoji");
+                        div.style.backgroundImage = `url("/emojis/${emoji.id}.png")`;
+                        div.addEventListener("mouseover", () => {
+                            document.getElementById("search-emojis").placeholder = `:${key}:`;
+                        });
+                        div.addEventListener("click", () => {
+                            if (!textarea.disabled) {
+                                textarea.value += `:${key}: `;
+                                textarea.focus();
+                                textarea.selectionStart = textarea.value.length;
+                            }
+                        });
+                        fragment.appendChild(div);
+                    }
+                    emojis.appendChild(fragment);
+                } else {
+                    const h1 = document.createElement("h1"); h1.classList.add("nothing");
+                    emojis.appendChild(h1);
+                }
+                document.getElementById("emojis").classSwitch("hide", "show");
+                setTimeout(() => show.emojis = true, 300);
+            });
+            document.getElementById("add-friend").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const username = this.getElementsByTagName("input")[0].value;
+                if (/^.{1,64}#[0-9]{4}$/.test(username) && username.split("#").length === 2) {
+                    this.getElementsByTagName("input")[0].value = "";
+                    this.getElementsByTagName("input")[0].blur();
+                    try {
+                        await Http.post("/users/friend", JSON.stringify({
+                            username: username
+                        }));
+                        swal({
+                            title: "Success",
+                            text: "Friend request sent",
+                            icon: "success"
+                        });
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "Invalid username or tag",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("search-friends").addEventListener("submit", function(e) {
+                e.preventDefault();
+                const input = this.getElementsByTagName("input")[0];
+                const username = input.value.toLowerCase();
+                changeFocus(friendsButton, pendingButton);
+                if (username.length > 0) {
+                    while (search.firstChild) {
+                        search.removeChild(search.firstChild);
+                    }
+                    if (username.length > 0 && username.length <= 64) {
+                        const map = client.dmChannels;
+                        for (const [id, channel] of map) {
+                            if (id !== EVERYONE && channel.recipient.username.toLowerCase().includes(username)) {
+                                const div = document.createElement("div"); div.classList.add("channel");
+                                const dot = document.createElement("div"); dot.classList.add("dot"); dot.style.opacity = channel.unread ? "1" : "0";
+                                const img = document.createElement("div"); img.classList.add("avatar"); img.style.backgroundImage = `url("${channel.recipient.avatar}")`;
+                                const p = document.createElement("p"); p.textContent = channel.recipient.username;
+                                const span = document.createElement("span"); span.textContent = `#${channel.recipient.tag}`;
+                                p.appendChild(span);
+                                div.appendChild(dot);
+                                div.appendChild(img);
+                                div.appendChild(p);
+                                if (id === client.thisDMChannelId) {
+                                    div.classList.add("selected");
+                                }
+                                div.addEventListener("click", () => {
+                                    channel.change();
+                                    input.value = "";
+                                });
+                                search.appendChild(div);
+                            }
+                        }
+                        friends.hide();
+                        pending.hide();
+                        search.show();
+                    }
+                } else {
+                    while (search.firstChild) {
+                        search.removeChild(search.firstChild);
+                    }
+                    search.hide();
+                    pending.hide();
+                    friends.show();
+                }
+            });
+            document.getElementById("choose-icon").addEventListener("change", function() {
+                const file = this.files[this.files.length - 1];
+                if (Object.values(uploadableImages).includes(file.type)) {
+                    if (file.size < 2e6) {
+                        const reader = new FileReader();
+                        const submit = document.getElementById("new").getElementsByTagName("button")[0];
+                        const icon = document.getElementById("new").getElementsByClassName("icon")[0];
+                        reader.addEventListener("loadstart", () => {
+                            this.disabled = true;
+                            submit.disabled = true;
+                        });
+                        reader.addEventListener("load", async () => {
+                            cache.icon = reader.result;
+                            this.value = "";
+                            this.disabled = false;
+                            submit.disabled = false;
+                            icon.style.backgroundImage = `url("${reader.result}")`;
+                        });
+                        reader.readAsDataURL(file);
+                    } else {
+                        this.value = "";
+                        swal({
+                            title: "Oops",
+                            text: "Choose an icon smaller than 2MB",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    this.value = "";
+                    swal({
+                        title: "Oops",
+                        text: ""
+                    })
+                }
+            });
+            document.getElementById("new").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const name = this.getElementsByTagName("input")[1].value;
+                if (name.length > 0 && name.length <= 64) {
+                    submit.disabled = true;
+                    try {
+                        await Http.post("/new/guild", JSON.stringify({
+                            name: name,
+                            file: cache.icon
+                        }));
+                        cache.icon = null;
+                        this.getElementsByTagName("input")[0].value = "";
+                        this.getElementsByTagName("input")[1].value = "";
+                        submit.disabled = false;
+                        this.getElementsByClassName("icon")[0].style.backgroundImage = "";
+                        document.getElementById("new").hide();
+                        document.getElementById("join").hide();
+                        document.getElementById("new-channel").hide();
+                        overlay.classSwitch("show", "hide");
+                        setTimeout(() => show.overlay = false, 300);
+                    } catch (error) {
+                        this.getElementsByTagName("input")[0].value = "";
+                        submit.disabled = false;
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "Enter a name between 1 and 64 characters",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("join").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const invite = this.getElementsByTagName("input")[0].value;
+                if (/^[a-zA-Z0-9]+$/.test(invite)) {
+                    submit.disabled = true;
+                    try {
+                        await Http.post("/invites/join", JSON.stringify({
+                            invite: invite
+                        }));
+                        this.getElementsByTagName("input")[0].value = "";
+                        submit.disabled = false;
+                        document.getElementById("new").hide();
+                        document.getElementById("join").hide();
+                        document.getElementById("new-channel").hide();
+                        overlay.classSwitch("show", "hide");
+                        setTimeout(() => show.overlay = false, 300);
+                    } catch (error) {
+                        submit.disabled = false;
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    submit.disabled = false;
+                    swal({
+                        title: "Oops",
+                        text: "Invalid invite",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("new-channel").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const name = this.getElementsByTagName("input")[0].value;
+                if (name.length > 0 && name.length <= 64) {
+                    submit.disabled = true;
+                    try {
+                        await Http.post(`/guilds/${client.thisGuildId}/channel/new`, JSON.stringify({
+                            name: name
+                        }));
+                        this.getElementsByTagName("input")[0].value = "";
+                        submit.disabled = false;
+                        document.getElementById("new").hide();
+                        document.getElementById("join").hide();
+                        document.getElementById("new-channel").hide();
+                        overlay.classSwitch("show", "hide");
+                        setTimeout(() => show.overlay = false, 300);
+                    } catch (error) {
+                        submit.disabled = false;
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "Enter a channel name between 1 and 64 characters",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("update-channel").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const name = this.getElementsByTagName("input")[0].value;
+                const channel = client.textChannels.get(client.thisTextChannelId);
+                if (name !== channel.name) {
+                    if (name.length > 0 && name.length <= 64) {
+                        try {
+                            await Http.post(`/guilds/${channel.guild.id}/channel/${channel.id}/update`, JSON.stringify({
+                                name: name
+                            }));
+                            edit.classSwitch("show", "hide");
+                            setTimeout(() => show.edit = false, 300);
+                            swal({
+                                title: "Success",
+                                text: "Channel updated",
+                                icon: "success"
+                            });
+                        } catch (error) {
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Enter a channel name between 1 and 64 characters",
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+            document.getElementById("delete-channel").addEventListener("click", async () => {
+                const channel = client.textChannels.get(client.thisTextChannelId);
+                swal({
+                    title: "Confirm?",
+                    text: `Are you sure you want to permanently delete ${channel.name}? This will remove all history associated with it.`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true
+                }).then(async ok => {
+                    if (ok) {
+                        try {
+                            await Http.post(`/guilds/${channel.guild.id}/channel/${channel.id}/delete`, null);
+                        } catch (error) {
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    }
+                });
+            });
+            document.getElementById("about-button").addEventListener("click", function() {
+                for (const button of manage.getElementsByClassName("selected")) {
+                    button.classList.remove("selected");
+                }
+                this.classList.add("selected");
+                document.getElementById("manage-invites").hide();
+                document.getElementById("manage-emojis").hide();
+                document.getElementById("manage-about").show();
+            });
+            document.getElementById("emojis-button").addEventListener("click", function() {
+                for (const button of manage.getElementsByClassName("selected")) {
+                    button.classList.remove("selected");
+                }
+                this.classList.add("selected");
+                document.getElementById("manage-about").hide();
+                document.getElementById("manage-invites").hide();
+                document.getElementById("manage-emojis").show();
+            });
+            document.getElementById("invites-button").addEventListener("click", async function() {
+                for (const button of manage.getElementsByClassName("selected")) {
+                    button.classList.remove("selected");
+                }
+                this.classList.add("selected");
+                document.getElementById("manage-about").hide();
+                document.getElementById("manage-emojis").hide();
+                document.getElementById("manage-invites").show();
+                if (!manageInvites.hasChildNodes()) {
+                    try {
+                        const response = await Http.post("/invites/get", JSON.stringify({
+                            guild_id: client.thisGuildId
+                        }));
+                        const fragment = document.createDocumentFragment();
+                        for (const invite of response.invites) {
+                            const div = document.createElement("div"); div.classList.add("invite");
+                            const p = document.createElement("p"); p.textContent = invite;
+                            const del = document.createElement("button");
+                            del.addEventListener("click", () => {
+                                swal({
+                                    title: "Confirm?",
+                                    text: "Are you sure you want to delete this invite?",
+                                    icon: "warning",
+                                    buttons: true
+                                }).then(async ok => {
+                                    try {
+                                        await Http.post("/invites/delete", JSON.stringify({
+                                            invite: invite
+                                        }));
+                                        manageInvites.removeChild(div);
+                                    } catch (error) {
+                                        swal({
+                                            title: "Oops",
+                                            text: error,
+                                            icon: "error"
+                                        });
+                                    }
+                                });
+                            });
+                            div.appendChild(p);
+                            div.appendChild(del);
+                            fragment.appendChild(div);
+                        }
+                        manageInvites.appendChild(fragment);
+                    } catch (error) {
+                        swal({
+                            title: "Oops",
+                            text: error,
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+            document.getElementById("delete-guild").addEventListener("click", () => {
+                swal({
+                    title: "Confirm?",
+                    text: `Are you sure you want to permanently delete ${client.guilds.get(client.thisGuildId).name}? This will remove all history associated with it.`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true
+                }).then(async ok => {
+                    if (ok) {
+                        try {
+                            await Http.post(`/guilds/${client.thisGuildId}/delete`, null);
+                            swal({
+                                title: "Success",
+                                text: "Community deleted!",
+                                icon: "success"
+                            });
+                        } catch (error) {
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    }
+                });
+            });
+            document.getElementById("update-guild").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const name = this.getElementsByTagName("input")[0].value;
+                if (name !== client.guilds.get(client.thisGuildId).name) {
+                    if (name.length > 0 && name.length <= 64) {
+                        submit.disabled = true;
+                        try {
+                            await Http.post(`/guilds/${client.thisGuildId}/update`, JSON.stringify({
+                                name: name
+                            }));
+                            submit.disabled = false;
+                            swal({
+                                title: "Success",
+                                text: "Community information updated",
+                                icon: "success"
+                            });
+                        } catch (error) {
+                            submit.disabled = false;
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Name must be between 1 - 64 characters",
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+            document.getElementById("upload-icon").addEventListener("change", function() {
+                const file = this.files[this.files.length - 1];
+                if (Object.values(uploadableImages).includes(file.type)) {
+                    if (file.size < 2e6) {
+                        const icon = manage.getElementsByClassName("icon")[0];
+                        const reader = new FileReader();
+                        reader.addEventListener("loadstart", () => {
+                            icon.style.backgroundImage = `url("/assets/loading.gif")`;
+                        });
+                        reader.addEventListener("load", async () => {
+                            this.disabled = true;
+                            try {
+                                const response = await Http.post(`/guilds/${client.thisGuildId}/update`, JSON.stringify({
+                                    file: reader.result
+                                }));
+                                this.value = "";
+                                this.disabled = false;
+                                icon.style.backgroundImage = `url("${response.icon}")`;
+                                swal({
+                                    title: "Success",
+                                    text: "Icon changed!",
+                                    icon: "success"
+                                });
+                            } catch (error) {
+                                this.value = "";
+                                this.disabled = false;
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        });
+                        reader.readAsDataURL(file);
+                    } else {
+                        this.value = "";
+                        swal({
+                            title: "Oops",
+                            text: "Choose an image smaller than 2MB",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    this.value = "";
+                    swal({
+                        title: "Oops",
+                        text: "Choose an image",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("upload-emojis").addEventListener("change", async function() {
+                let size = 0;
+                const emojis = [];
+                for (const file of this.files) {
+                    size += file.size;
+                    if (file.size < 2e6) {
+                        emojis.push({
+                            file: await asyncFileReader(file),
+                            name: file.name
+                        });
+                    } else {
+                        break;
+                    }
+                }
+                try {
+                    this.disabled = true;
+                    const response = await Http.post(`/guilds/${client.thisGuildId}/emoji/new`, JSON.stringify({
+                        files: emojis
+                    }));
+                    this.value = "";
+                    this.disabled = false;
+                    for (const emoji of response.emojis) {
+                        const div = document.createElement("div"); div.classList.add("emoji");
+                        const img = document.createElement("div"); img.classList.add("img"); img.style.backgroundImage = `url("/emojis/${emoji.id}.png")`;
+                        const input = document.createElement("input"); input.value = `${emoji.name}`;
+                        input.addEventListener("blur", async () => {
+                            const name = input.value;
+                            if (name.length > 0 && name !== emoji.name) {
+                                try {
+                                    await Http.post(`/guilds/${client.thisGuildId}/emoji/${emoji.id}/update`, JSON.stringify({
+                                        name: name
+                                    }));
+                                    for (const [key, value] of client.emojis) {
+                                        if (value.id === emoji.id) {
+                                            client.emojis.delete(key);
+                                            client.emojis.set(client.uniqueEmojiName(name), {
+                                                id: emoji.id,
+                                                name: name
+                                            });
+                                            break;
+                                        }
+                                    }
+                                    for (const value of client.guilds.get(client.thisGuildId).emojis) {
+                                        if (value.id === emoji.id) {
+                                            value.name = name;
+                                        }
+                                    }
+                                } catch (error) {
+                                    swal({
+                                        title: "Oops",
+                                        text: error,
+                                        icon: "error"
+                                    });
+                                }
+                            }
+                        });
+                        const del = document.createElement("button");
+                        del.addEventListener("click", () => {
+                            swal({
+                                title: "Confirm?",
+                                text: "Deleting this emoji will result in an empty picture in all messages where this emoji is used.",
+                                icon: "warning",
+                                buttons: true
+                            }).then(async ok => {
+                                if (ok) {
+                                    try {
+                                        await Http.post(`/guilds/${client.thisGuildId}/emoji/${emoji.id}/delete`, null);
+                                        manageEmojis.removeChild(div);
+                                    } catch (error) {
+                                        swal({
+                                            title: "Oops",
+                                            text: error,
+                                            icon: "error"
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                        div.appendChild(img);
+                        div.appendChild(input);
+                        div.appendChild(del);
+                        manageEmojis.appendChild(div);
+                    }
+                    swal({
+                        title: "Success",
+                        text: `Emoji${emojis.length > 1 ? "s" : ""} uploaded!`,
+                        icon: "success"
+                    });
+                } catch (error) {
+                    this.value = "";
+                    this.disabled = false;
+                    swal({
+                        title: "Oops",
+                        text: error,
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("create-invite").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                submit.disabled = true;
+                try {
+                    const response = await Http.post("invites/new", JSON.stringify({
+                        guild_id: client.thisGuildId,
+                    }));
+                    const div = document.createElement("div"); div.classList.add("invite");
+                    const p = document.createElement("p"); p.textContent = response.invite;
+                    const del = document.createElement("button");
+                    del.addEventListener("click", () => {
+                        swal({
+                            title: "Confirm?",
+                            text: "Are you sure you want to delete this invite?",
+                            icon: "warning",
+                            buttons: true
+                        }).then(async ok => {
+                            try {
+                                await Http.post("invites/delete", JSON.stringify({
+                                    invite: response.invite
+                                }));
+                                manageInvites.removeChild(div);
+                            } catch (error) {
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        });
+                    });
+                    div.appendChild(p);
+                    div.appendChild(del);
+                    manageInvites.appendChild(div);
+                    submit.disabled = false;
+                    swal({
+                        title: "Success",
+                        text: `Invite created: ${response.invite}`,
+                        icon: "success"
+                    });
+                } catch (error) {
+                    submit.disabled = false;
+                    swal({
+                        title: "Oops",
+                        text: error,
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("upload-avatar").addEventListener("change", function() {
+                const file = this.files[this.files.length - 1];
+                if (Object.values(uploadableImages).includes(file.type)) {
+                    if (file.size < 2e6) {
+                        document.getElementById("delete-avatar").disabled = true;
+                        const avatar = settings.getElementsByClassName("avatar")[0];
+                        const reader = new FileReader();
+                        reader.addEventListener("loadstart", () => {
+                            avatar.style.backgroundImage = `url("/assets/loading.gif")`;
+                        });
+                        reader.addEventListener("load", async () => {
+                            this.disabled = true;
+                            try {
+                                const response = await Http.post("/upload/avatar", JSON.stringify({
+                                    file: reader.result
+                                }));
+                                ws.send(JSON.stringify({
+                                    type: "UPDATE"
+                                }));
+                                this.value = "";
+                                this.disabled = false;
+                                avatar.style.backgroundImage = `url("${response.avatar}")`;
+                                document.getElementsByTagName("nav")[0].getElementsByClassName("avatar")[0].style.backgroundImage = `url("${response.avatar}")`;
+                                document.getElementById("delete-avatar").disabled = false;
+                                swal({
+                                    title: "Success",
+                                    text: "Avatar changed!",
+                                    icon: "success"
+                                });
+                            } catch (error) {
+                                this.value = "";
+                                this.disabled = false;
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        });
+                        reader.readAsDataURL(file);
+                    } else {
+                        this.value = "";
+                        swal({
+                            title: "Oops",
+                            text: "Choose an image smaller than 2MB",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    this.value = "";
+                    swal({
+                        title: "Oops",
+                        text: "Choose an image",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("delete-avatar").addEventListener("click", () => {
+                swal({
+                    title: "Confirm?",
+                    text: "Are you sure you want to delete your avatar?",
+                    icon: "warning",
+                    buttons: true
+                }).then(async ok => {
+                    if (ok) {
+                        try {
+                            await Http.post("/upload/avatar", null);
+                            ws.send(JSON.stringify({
+                                type: "UPDATE"
+                            }));
+                            settings.getElementsByClassName("avatar")[0].style.backgroundImage = `url("/avatars/default.jpg")`;
+                            document.getElementsByTagName("nav")[0].getElementsByClassName("avatar")[0].style.backgroundImage = `url("/avatars/default.jpg")`;
+                            swal({
+                                title: "Success",
+                                text: "Avatar deleted!",
+                                icon: "success"
+                            });
+                        } catch (error) {
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    }
+                });
+            });
+            document.getElementById("change-username").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const username = this.getElementsByTagName("input")[0].value;
+                const tag = this.getElementsByTagName("input")[1].value;
+                const password = this.getElementsByTagName("input")[2].value;
+                if (username.length > 0 && username.length <= 64) {
+                    if (!username.includes("#")) {
+                        if (/^[0-9]{4}$/.test(tag)) {
+                            if (password.length >= 8) {
+                                submit.disabled = true;
+                                try {
+                                    await Http.post("/change/username", JSON.stringify({
+                                        username: username,
+                                        tag: tag,
+                                        password: password
+                                    }));
+                                    ws.send(JSON.stringify({
+                                        type: "UPDATE"
+                                    }));
+                                    this.getElementsByTagName("input")[0].value = "";
+                                    this.getElementsByTagName("input")[2].value = "";
+                                    document.getElementById("username").textContent = `${username}#${tag}`;
+                                    submit.disabled = false;
+                                    swal({
+                                        title: "Success",
+                                        text: "Username/tag changed!",
+                                        icon: "success"
+                                    });
+                                } catch (error) {
+                                    submit.disabled = false;
+                                    swal({
+                                        title: "Oops",
+                                        text: error,
+                                        icon: "error"
+                                    });
+                                }
+                            } else {
+                                swal({
+                                    title: "Oops",
+                                    text: "Wrong password",
+                                    icon: "error"
+                                });
+                            }
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: "Invalid tag",
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Username contains invalid characters",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "Username must be between 1 - 64 characters",
+                        icon: "error",
+                    });
+                }
+            });
+            document.getElementById("change-password").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const submit = this.getElementsByTagName("button")[0];
+                const current = this.getElementsByTagName("input")[0].value;
+                const password = this.getElementsByTagName("input")[1].value;
+                const verify = this.getElementsByTagName("input")[2].value;
+                if (current.length >= 8) {
+                    if (password.length >= 8) {
+                        if (password === verify) {
+                            submit.disabled = true;
+                            try {
+                                await Http.post("/change/password", JSON.stringify({
+                                    current: current,
+                                    password: password,
+                                    verify: verify
+                                }));
+                                for (const input of this.getElementsByTagName("input")) {
+                                    input.value = "";
+                                }
+                                submit.disabled = false;
+                                swal({
+                                    title: "Success",
+                                    text: "Password changed",
+                                    icon: "success"
+                                });
+                            } catch (error) {
+                                submit.disabled = false;
+                                swal({
+                                    title: "Oops",
+                                    text: error,
+                                    icon: "error"
+                                });
+                            }
+                        } else {
+                            swal({
+                                title: "Oops",
+                                text: "Passwords don't match",
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        swal({
+                            title: "Oops",
+                            text: "Password must have at least 8 characters",
+                            icon: "error"
+                        });
+                    }
+                } else {
+                    swal({
+                        title: "Oops",
+                        text: "Wrong password",
+                        icon: "error"
+                    });
+                }
+            });
+            document.getElementById("settings-button").addEventListener("click", function() {
+                settings.classSwitch("show", "hide");
+            });
+            document.getElementById("button").addEventListener("click", () => {
+                if (client.thisChannelType === DM_CHANNEL) {
+                    if (client.guilds.size === 0) {
+                        if (guilds.getElementsByTagName("h1")[0] === undefined) {
+                            const h1 = document.createElement("h1"); h1.classList.add("nothing");
+                            guilds.appendChild(h1);
+                        }
+                    }
+                    main.classSwitch("hide", "show");
+                    setTimeout(() => show.main = true, 300);
+                } else if (client.thisChannelType === TEXT_CHANNEL) {
+                    if (!changing) {
+                        changing = true;
+                        textarea.disabled = true;
+                        disableAttachments(true);
+                        main.classSwitch("show", "hide");
+                        setTimeout(() => show.main = false, 300);
+                        channels.hide();
+                        dm.show();
+                        if (client.thisGuildId !== DM) {
+                            const guild = client.guilds.get(client.thisGuildId);
+                            guild.ui.self.hide();
+                            guild.channels.get(client.thisTextChannelId).messages.hide();
+                        }
+                        const channel = client.dmChannels.get(client.thisDMChannelId);
+                        channel.messages.show();
+                        if (channel.id !== EVERYONE) {
+                            info.disabled = false;
+                        }
+                        messages.scrollDown();
+                        textarea.placeholder = channel.id !== EVERYONE ? `Message @${channel.recipient.username}#${channel.recipient.tag}` : `Message @${channel.recipient.username}`;
+                        textarea.disabled = false;
+                        disableAttachments(channel.disableAttachments);
+                        client.thisGuildId = DM;
+                        client.thisChannelType = DM_CHANNEL;
+                        setTimeout(() => changing = false, 300);
+                    }
+                }
+            });
+            document.getElementById("new-button").addEventListener("click", () => {
+                main.classSwitch("show", "hide");
+                setTimeout(() => show.main = false, 300);
+                document.getElementById("new").show();
+                document.getElementById("join").hide();
+                document.getElementById("new-channel").hide();
+                overlay.classSwitch("hide", "show");
+                setTimeout(() => show.overlay = true, 300);
+            });
+            document.getElementById("join-button").addEventListener("click", () => {
+                main.classSwitch("show", "hide");
+                setTimeout(() => show.main = false, 300);
+                document.getElementById("new").hide();
+                document.getElementById("join").show();
+                document.getElementById("new-channel").hide();
+                overlay.classSwitch("hide", "show");
+                setTimeout(() => show.overlay = true, 300);
+            });
+            document.getElementById("logout").addEventListener("click", () => {
+                swal({
+                    title: "Confirm?",
+                    text: "Are you sure you want to log out?",
+                    icon: "warning",
+                    buttons: true
+                }).then(async ok => {
+                    if (ok) {
+                        try {
+                            await Http.get("/logout");
+                            window.location = "/";
+                        } catch (error) {
+                            swal({
+                                title: "Oops",
+                                text: error,
+                                icon: "error"
+                            });
+                        }
+                    }
+                });
+            });
+            document.getElementById("change-theme").addEventListener("click", () => {
+                if (stylesheet.getAttribute("href") === "/css/index.css") {
+                    stylesheet.setAttribute("href", "/css/light.css");
+                    window.localStorage.setItem("light", 1);
+                } else {
+                    stylesheet.setAttribute("href", "/css/index.css");
+                    window.localStorage.removeItem("light");
+                }
+            });
+            document.addEventListener("click", async function(e) {
+                const element = e.target;
+                if (element === click) {
+                    if (!show.menu) {
+                        menu.classSwitch("hide", "show");
+                        setTimeout(() => show.menu = true, 300);
+                    } else {
+                        menu.classSwitch("show", "hide");
+                        setTimeout(() => show.menu = false, 300);
+                    }
+                    return;
+                }
+                if (show.menu) {
+                    if (element.id === "settings-button") {
+                        settings.classSwitch("hide", "show");
+                        menu.classSwitch("show", "hide");
+                        setTimeout(() => show.menu = false, 300);
+                    } else if (element !== menu && element.parentNode !== menu) {
+                        menu.classSwitch("show", "hide");
+                        setTimeout(() => show.menu = false, 300);
+                    }
+                    return;
+                }
+                if (show.splash) {
+                    if (!splash.getElementsByTagName("div")[0].contains(element)) {
+                        splash.classSwitch("show", "hide");
+                        setTimeout(() => show.splash = false, 300);
+                    }
+                    return;
+                }
+                if (show.emojis) {
+                    if (!document.getElementById("emojis").contains(element)) {
+                        document.getElementById("search-emojis").placeholder = "";
+                        document.getElementById("emojis").classSwitch("show", "hide");
+                        setTimeout(() => show.emojis = false, 300);
+                    }
+                    return;
+                }
+                if (show.upload) {
+                    if (!upload.getElementsByTagName("div")[0].contains(element)) {
+                        cache.attachment = null;
+                        document.getElementById("file").value = "";
+                        upload.classSwitch("show", "hide");
+                        setTimeout(() => show.upload = false, 300);
+                    }
+                    return;
+                }
+                if (show.edit) {
+                    if (!edit.getElementsByTagName("div")[0].contains(element)) {
+                        edit.classSwitch("show", "hide");
+                        setTimeout(() => show.edit = false, 300);
+                    }
+                    return;
+                }
+                if (show.main) {
+                    if (!main.getElementsByTagName("div")[0].contains(element)) {
+                        main.classSwitch("show", "hide");
+                        setTimeout(() => show.main = false, 300);
+                    }
+                    return;
+                }if (show.overlay) {
+                    if (!document.getElementById("new").contains(element) && !document.getElementById("join").contains(element) && !document.getElementById("new-channel").contains(element) && (document.getElementsByClassName("swal-overlay")[0] !== undefined ? !document.getElementsByClassName("swal-overlay")[0].contains(element) : true)) {
+                        document.getElementById("new").hide();
+                        document.getElementById("join").hide();
+                        document.getElementById("new-channel").hide();
+                        overlay.classSwitch("show", "hide");
+                        setTimeout(() => show.overlay = false, 300);
+                    }
+                    return;
+                }
+                if (element.classList.contains("close")) {
+                    manage.classSwitch("show", "hide");
+                    settings.classSwitch("show", "hide");
+                    return;
+                }
+                if (element === friendsButton) {
+                    friendsDot.style.opacity = "0";
+                    changeFocus(friendsButton, pendingButton);
+                    pending.hide();
+                    search.hide();
+                    friends.show();
+                    return;
+                }
+                if (element === pendingButton) {
+                    pendingDot.style.opacity = "0";
+                    changeFocus(pendingButton, friendsButton);
+                    friends.hide();
+                    search.hide();
+                    pending.show();
+                    return;
+                }
+            });
+            document.addEventListener("keydown", e => {
+                if (e.key === "Escape" && (manage.classList.contains("show") || settings.classList.contains("show"))) {
+                    manage.classSwitch("show", "hide");
+                    settings.classSwitch("show", "hide");
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body onbeforeunload="">
+    <audio id="ping" preload="auto">
+        <source src="/assets/notification.mp3" type="audio/mpeg"/>
+    </audio>
+    <div id="loading"></div>
+    <nav>
+        <button id="info"></button>
+        <button id="button"></button>
+        <div class="avatar"></div>
+    </nav>
+    <ul id="menu">
+        <hr>
+        <li><p id="change-theme">Change theme</p></li>
+        <li><p id="settings-button">Settings</p></li>
+        <li><p id="logout">Logout</p></li>
+        <hr>
+    </ul>
+    <div id="dm">
+        <div>
+            <form autocomplete="" id="add-friend">
+                <input type="text" maxlength="69" placeholder="Add friend: example#0000">
+                <input type="submit">
+            </form>
+        </div>
+        <div>
+            <form autocomplete="" id="search-friends">
+                <input type="text" maxlength="64" placeholder="Search friends list by username (enter)">
+                <input type="submit">
+            </form>
+        </div>
+        <div>
+            <button type="button" class="focus">
+                <div class="dot"></div>
+                <p>Friends</p>
+            </button>
+            <button type="button" class="focusout">
+                <div class="dot"></div>
+                <p>Pending</p>
+            </button>
+        </div>
+        <div class="flex" id="friends">
+            <div class="channel selected" id="dm-everyone">
+                <div class="dot"></div>
+                <div class="avatar" style="background-image:url(/assets/icon.jpg)"></div>
+                <p>@everyone</p>
+            </div>
+        </div>
+        <div class="flex" id="pending"></div>
+        <div class="flex" id="search"></div>
+    </div>
+    <div id="channels"></div>
+    <div id="chat">
+        <div id="messages">
+            <div id="chat-everyone"></div>
+        </div>
+        <div id="messagebox">
+            <label for="file"></label>
+            <input type="file" id="file">
+            <div>
+                <textarea type="text" placeholder="Message @everyone"></textarea>
+                <p id="who-is-typing"></p>
+            </div>
+            <div id="open-emojis"></div>
+        </div>
+        <div id="emojis">
+            <div>
+                <input type="text" placeholder="" id="search-emojis">
+            </div>
+            <div></div>
+        </div>
+    </div>
+    <div id="upload">
+        <div>
+            <textarea type="text" placeholder="Add a message"></textarea>
+            <div>
+                <div id="view"></div>
+                <button id="upload-button" class="send"></button>
+            </div>
+        </div>
+    </div>
+    <div id="stats"></div>
+    <div id="splash">
+        <div>
+            <div class="avatar"></div>
+            <p></p>
+        </div>
+    </div>
+    <div id="manage">
+        <button class="close">&#10005;</button>
+        <h6>ESC</h6>
+        <div class="options">
+            <div>
+                <h1>OPTIONS</h1>
+                <button class="selected" id="about-button">About</button>
+                <button id="emojis-button">Emojis</button>
+                <button id="invites-button">Invites</button>
+                <button id="delete-guild">Delete Community</button>
+            </div>
+        </div>
+        <div id="overview">
+            <div class="panel" id="manage-about">
+                <div>
+                    <div class="icon">
+                        <label for="upload-icon">
+                            <p>CHANGE ICON</p>
+                        </label>
+                    </div>
+                    <input type="file" accept="image/*" id="upload-icon">
+                    <p class="description">Upload an image for your community icon.
+                        <br/>
+                        <span>Maximum size: 2MB</span>
+                    </p>    
+                </div>
+                <div class="change">
+                    <h1>COMMUNITY NAME</h1>
+                    <form autocomplete="" id="update-guild">
+                        <input type="text" placeholder="Community name"><hr>
+                        <button type="submit">Save</button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel" id="manage-emojis">
+                <div>
+                    <h1>EMOJIS</h1>
+                    <h3>Upload emojis usable by everyone in your community by name, and everyone else by ID. The name of the file is set as the emoji name. Maximum size 128KB. TIP: select and upload multiple images at once!</h3>
+                    <hr>
+                    <label for="upload-emojis">Upload Emojis</label>
+                    <input type="file" accept="image/*" id="upload-emojis" multiple="">
+                </div>
+                <div></div>
+            </div>
+            <div class="panel" id="manage-invites">
+                <div>
+                    <h1>INVITES</h1>
+                    <h3>Active invites for your community. Users can join your community by entering an invite code.</h3>
+                    <hr>
+                    <form autocomplete="" id="create-invite">
+                        <button type="submit">Create</button>
+                    </form>
+                </div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+    <div id="edit">
+        <div>
+            <form autocomplete="" id="update-channel">
+                <input type="text" placeholder="Channel name">
+                <button type="submit">Save</button>
+            </form>
+            <button id="delete-channel">Delete Channel</button>
+        </div>
+    </div>
+    <div id="main">
+        <div>
+            <div id="forms">
+                <hr>
+                <button id="new-button">New</button>
+                <button id="join-button">Join</button>
+                <hr>
+            </div>
+            <div id="guilds"></div>
+        </div>
+    </div>
+    <div id="overlay">
+        <form autocomplete="" id="new">
+            <div class="icon">
+                <label for="choose-icon">
+                    <p>COMMUNITY ICON</p>
+                </label>
+            </div>
+            <input type="file" accept="image/*" id="choose-icon">
+            <input type="name" maxlength="64" placeholder="Enter a community name">
+            <br/>
+            <button type="submit">Create</button>
+        </form>
+        <form autocomplete="" id="join">
+            <input type="text" placeholder="Enter your invite code">
+            <button type="submit"></button>
+        </form>
+        <form autocomplete="" id="new-channel">
+            <input type="text" maxlength="64" placeholder="Channel name">
+            <button type="submit">Create</button>
+        </form>
+    </div>
+    <div id="settings">
+        <div>
+            <button class="close">&#10005;</button>
+            <h6>ESC</h6>
+            <div id="account">
+                <h1>MY ACCOUNT</h1>
+                <div id="about">
+                    <div class="avatar">
+                        <label for="upload-avatar">
+                            <p>CHANGE AVATAR</p>
+                        </label>
+                    </div>
+                    <input type="file" accept="image/*" id="upload-avatar">
+                    <div id="section">
+                        <div class="section">
+                            <h5>USERNAME</h5>
+                            <p id="username"></p>
+                        </div>
+                        <hr>
+                        <div class="section">
+                            <h5>EMAIL</h5>
+                            <p id="email"></p>
+                        </div>    
+                    </div>
+                    <button id="delete-avatar">Delete Avatar</button>
+                </div>
+            </div>
+            <div class="change">
+                <h1>CHANGE USERNAME</h1>
+                <form autocomplete="" id="change-username">
+                    <div>
+                        <input type="text" maxlength="64" placeholder="Username">
+                        <input type="text" maxlength="4" placeholder="0000">
+                    </div>
+                    <hr>
+                    <hr>
+                    <input type="password" placeholder="Password">
+                    <hr>
+                    <hr>
+                    <button type="submit">Change Username</button>
+                </form>
+            </div>
+            <div class="change">
+                <h1>CHANGE PASSWORD</h1>
+                <form autocomplete="" id="change-password">
+                    <input type="password" placeholder="Current Password">
+                    <hr>
+                    <hr>
+                    <input type="password" placeholder="New Password">
+                    <hr>
+                    <hr>
+                    <input type="password" placeholder="Verify Password">
+                    <hr>
+                    <hr>
+                    <button type="submit">Change Password</button>
+                </form>
+            </div>
+            <div style="height:100px"></div>
+        </div>
+    </div>
+</body>
+</html>
